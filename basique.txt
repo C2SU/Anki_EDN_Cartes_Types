@@ -40,6 +40,7 @@
         for (var barDiv of allBars) barDiv.style.borderColor = "blue blue blue blue";
     }
     // -- Capitaliser la première lettre de chaque champ et de chaque puce --
+    try {
     var elementsToCapitalize = document.querySelectorAll('.items, .items li');
     elementsToCapitalize.forEach(function (item) {
         var foundLetter = false;
@@ -60,13 +61,16 @@
                             followedByUpper = true;
                         }
                     }
-                    if (!followedByUpper && !hasPrecedingNonSpace) {
+                    var hasNumberBefore = false;
+                    if (index > 0) {
+                        var beforeMatch = text.substring(0, index).match(/[0-9]/);
+                        if (beforeMatch) hasNumberBefore = true;
+                    }
+                    if (!followedByUpper && !hasNumberBefore) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
                     return true;
-                } else {
-                    if (text.replace(/[\s\/\-]/g, '').length > 0) hasPrecedingNonSpace = true;
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A') return false;
@@ -78,6 +82,7 @@
         }
         capitalizeFirstTextNode(item);
     });
+    } catch(e) {}
 </script>
 ```
 ## Back Template
@@ -234,6 +239,7 @@
 
 
     // -- Capitaliser la première lettre de chaque champ et de chaque puce --
+    try {
     var elementsToCapitalize = document.querySelectorAll('.items, .items li');
     elementsToCapitalize.forEach(function (item) {
         var foundLetter = false;
@@ -259,13 +265,16 @@
                         }
                     }
 
-                    if (!followedByUpper && !hasPrecedingNonSpace) {
+                    var hasNumberBefore = false;
+                    if (index > 0) {
+                        var beforeMatch = text.substring(0, index).match(/[0-9]/);
+                        if (beforeMatch) hasNumberBefore = true;
+                    }
+                    if (!followedByUpper && !hasNumberBefore) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
                     return true;
-                } else {
-                    if (text.replace(/[\s\/\-]/g, '').length > 0) hasPrecedingNonSpace = true;
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A') return false;
@@ -279,8 +288,10 @@
         }
         capitalizeFirstTextNode(item);
     });
+    } catch(e) {}
 
     // -- Ajout de saut de ligne après les cartes liées --
+    try {
     var clContainers = document.querySelectorAll('.cartesLiees');
     clContainers.forEach(function (container) {
         var kbds = container.querySelectorAll('kbd.clickable_cards');
@@ -299,8 +310,10 @@
             }
         });
     });
+    } catch(e) {}
 
     // -- Images : zoom au clic, lien au double-clic --
+    try {
     var allImages = document.querySelectorAll('.card img');
     allImages.forEach(function(img) {
         if (img.getAttribute('data-img-handled')) return;
@@ -349,10 +362,12 @@
             }
         }
     });
+    } catch(e) {}
 
     // -- Comportements exclusifs Desktop et globaux --
     if (!document.documentElement.classList.contains('mobile')) {
-        var clHider = document.querySelector('.cartesLieesIcon.barHider');
+        var qa = document.getElementById('qa') || document;
+        var clHider = qa.querySelector('.cartesLieesIcon.barHider');
         if (clHider && clHider.style.display !== 'none') {
             toggle('cartesLiees');
         }
