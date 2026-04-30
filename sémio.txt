@@ -47,16 +47,16 @@
     var elementsToCapitalize = document.querySelectorAll('.items, .items li');
     elementsToCapitalize.forEach(function (item) {
         var foundLetter = false;
-        var hasPrecedingNonSpace = false;
+
         function capitalizeFirstTextNode(node) {
             if (foundLetter) return true;
+
             if (node.nodeType === Node.TEXT_NODE) {
                 var text = node.nodeValue;
                 var match = text.match(/[a-zA-ZÀ-ÿœŒæÆ]/);
                 if (match) {
                     var index = match.index;
-                    var textBeforeInNode = text.substring(0, index).replace(/\s+/g, '');
-                    if (textBeforeInNode.length > 0) hasPrecedingNonSpace = true;
+
                     var followedByUpper = false;
                     if (index + 1 < text.length) {
                         var nextChar = text.charAt(index + 1);
@@ -64,6 +64,7 @@
                             followedByUpper = true;
                         }
                     }
+
                     var hasNumberBefore = false;
                     if (index > 0) {
                         var beforeMatch = text.substring(0, index).match(/[0-9]/);
@@ -76,7 +77,7 @@
                     return true;
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
-                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A') return false;
+                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP') return false;
                 for (var i = 0; i < node.childNodes.length; i++) {
                     if (capitalizeFirstTextNode(node.childNodes[i])) return true;
                 }
@@ -153,7 +154,7 @@
     <div class="barHider cartesLieesIcon" style="display: block;" onclick="toggle('cartesLiees')"></div>
     <div class="section" style="display: none;">
         <div class="bar cartesLieesIcon" onclick="toggle('cartesLiees')"></div>
-        <div id="cartesLiees" class="items cartesLiees"><span>{{Cartes liées}}</span></div>
+        <div id="cartesLiees" class="items cartesLiees">{{Cartes liées}}</div>
     </div>
 </div>
 <hr style="visibility:hidden">
@@ -258,7 +259,7 @@
     var elementsToCapitalize = document.querySelectorAll('.items, .items li');
     elementsToCapitalize.forEach(function (item) {
         var foundLetter = false;
-        var hasPrecedingNonSpace = false;
+        var afterCloze = false;
 
         function capitalizeFirstTextNode(node) {
             if (foundLetter) return true;
@@ -269,8 +270,22 @@
                 if (match) {
                     var index = match.index;
 
-                    var textBeforeInNode = text.substring(0, index).replace(/\s+/g, '');
-                    if (textBeforeInNode.length > 0) hasPrecedingNonSpace = true;
+                    // Si on est juste après un cloze, ne pas capitaliser ce mot
+                    // mais mettre en minuscule si c'est une majuscule isolée
+                    if (afterCloze) {
+                        var char = text.charAt(index);
+                        if (char === char.toUpperCase() && char !== char.toLowerCase()) {
+                            // Vérifier si c'est suivi d'une minuscule (= majuscule isolée à corriger)
+                            if (index + 1 < text.length) {
+                                var next = text.charAt(index + 1);
+                                if (next === next.toLowerCase() && next !== next.toUpperCase()) {
+                                    node.nodeValue = text.substring(0, index) + char.toLowerCase() + text.substring(index + 1);
+                                }
+                            }
+                        }
+                        foundLetter = true;
+                        return true;
+                    }
 
                     var followedByUpper = false;
                     if (index + 1 < text.length) {
@@ -292,11 +307,14 @@
                     return true;
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
-                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A') return false;
+                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP') return false;
+                // Détecter les spans cloze pour ne pas capitaliser le mot suivant
+                if (node.classList && node.classList.contains('cloze')) {
+                    afterCloze = true;
+                    return false;
+                }
                 for (var i = 0; i < node.childNodes.length; i++) {
-                    if (capitalizeFirstTextNode(node.childNodes[i])) {
-                        return true;
-                    }
+                    if (capitalizeFirstTextNode(node.childNodes[i])) return true;
                 }
             }
             return false;
@@ -346,13 +364,15 @@
             }
         }
 
-        img.addEventListener('click', function(e) {
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            this.classList.toggle('fullscreen-img');
-            this.style.cursor = this.classList.contains('fullscreen-img') ? 'zoom-out' : 'zoom-in';
-        });
+        if (!document.documentElement.classList.contains('mobile')) {
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                this.classList.toggle('fullscreen-img');
+                this.style.cursor = this.classList.contains('fullscreen-img') ? 'zoom-out' : 'zoom-in';
+            });
+        }
 
         if (!document.documentElement.classList.contains('mobile')) {
             img.addEventListener('dblclick', function(e) {
@@ -381,11 +401,15 @@
 
     // -- Comportements exclusifs Desktop et globaux --
     if (!document.documentElement.classList.contains('mobile')) {
-        var qa = document.getElementById('qa') || document;
-        var clHider = qa.querySelector('.cartesLieesIcon.barHider');
-        if (clHider && clHider.style.display !== 'none') {
-            toggle('cartesLiees');
-        }
+        var clContainers = document.querySelectorAll('#cartesLieesMegaContainer');
+        clContainers.forEach(function(c) {
+            var hider = c.querySelector('.barHider');
+            var section = c.querySelector('.section');
+            if (section && section.style.display === 'none') {
+                if (hider) hider.style.display = 'none';
+                section.style.display = 'flex';
+            }
+        });
     }
     window.scrollTo(0, 0);
     setTimeout(function() { window.scrollTo({top: 0, behavior: 'instant'}); }, 10);
@@ -529,6 +553,26 @@ padding: 8px 0;
 flex-grow: 1;
 }
 
+.mobile .items {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.mobile .section {
+  max-width: 90%;
+  overflow-x: hidden;
+}
+
+.mobile .items table {
+  max-width: 100%;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .illustrationIcon, .mobile .night_mode .illustrationIcon {
 background-image: url(img_5fc4120f.webp);
 }
@@ -643,7 +687,7 @@ text-align: left;
   box-shadow: 0 0 0 100vmax rgba(255, 255, 255, 0.95) !important;
   background-color: rgba(255, 255, 255, 0.95) !important;
 }
-.nightMode .card img.fullscreen-img, .night_mode .card img.fullscreen-img {
+.nightMode .card img.fullscreen-img, .night_mode .card img.fullscreen-img, .mobile .night_mode .card img.fullscreen-img {
   box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.9) !important;
   background-color: rgba(0, 0, 0, 0.9) !important;
 }

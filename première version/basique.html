@@ -1,0 +1,349 @@
+## Front Template
+```html
+<div class="section">
+    <div class="bar rectoIcon" onclick="toggle(recto)"></div>
+    <div id="recto" class="items recto">{{Recto}}</div>
+</div>
+
+<div style="display: none;">
+    Si applicable, ce(tte) œuvre est mise à disposition selon les termes de la <a rel="license"
+        href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Licence Creative Commons Attribution - Pas
+        d’Utilisation Commerciale - Partage dans les Mêmes Conditions 4.0 International.</a>
+</div>
+```
+## Back Template
+```html
+{{FrontSide}}
+
+<hr style="visibility:hidden">
+
+<div id="answerMegaContainer">
+    <div class="barHider answerIcon" onclick="toggle('answer')"></div>
+    <div class="section">
+        <div class="bar answerIcon" onclick="toggle('answer')"></div>
+        <div id="answer" class="items answer">{{Verso}}</div>
+    </div>
+</div>
+
+<hr style="visibility:hidden">
+
+{{#Mnemonics}}
+<div id="mnemonicsMegaContainer">
+    <div class="barHider mnemonicsIcon" onclick="toggle('mnemonics')"></div>
+    <div class="section">
+        <div class="bar mnemonicsIcon" onclick="toggle('mnemonics')"></div>
+        <div id="mnemonics" class="items mnemonics">{{Mnemonics}}</div>
+    </div>
+</div>
+<hr style="visibility:hidden">
+{{/Mnemonics}}
+
+{{#Erreurs faites}}
+<div id="erreursFaitesMegaContainer">
+    <div class="barHider errorsIcon" onclick="toggle('errors')"></div>
+    <div class="section">
+        <div class="bar errorsIcon" onclick="toggle('errors')"></div>
+        <div id="errors" class="items errors">{{Erreurs faites}}</div>
+    </div>
+</div>
+<hr style="visibility:hidden">
+{{/Erreurs faites}}
+
+{{#Cartes liées}}
+<div id="cartesLieesMegaContainer">
+    <div class="barHider cartesLieesIcon" style="display: block;" onclick="toggle('cartesLiees')"></div>
+    <div class="section" style="display: none;">
+        <div class="bar cartesLieesIcon" onclick="toggle('cartesLiees')"></div>
+        <div id="cartesLiees" class="items cartesLiees">{{Cartes liées}}</div>
+    </div>
+</div>
+<hr style="visibility:hidden">
+{{/Cartes liées}}
+
+{{#Infos supplémentaires}}
+<div id="infoSupplementairesMegaContainer">
+    <div class="barHider infoSupplementairesIcon" onclick="toggle('infoSupplementaires')"></div>
+    <div class="section">
+        <div class="bar infoSupplementairesIcon" onclick="toggle('infoSupplementaires')"></div>
+        <div id="infoSupplementaires" class="items infoSupplementaires">{{Infos supplémentaires}}</div>
+    </div>
+</div>
+<hr style="visibility:hidden">
+{{/Infos supplémentaires}}
+
+
+{{#Tags}}
+<div id="tagsMegaContainer">
+    <div class="barHider tagsIcon" style="display: block;" onclick="toggle('tags')"></div>
+    <div class="section" style="display: none;">
+        <div class="bar tagsIcon" onclick="toggle('tags')"></div>
+        <div id="tags" class="items tags">{{clickable:Tags}}</div>
+    </div>
+</div>
+<hr style="visibility:hidden">
+{{/Tags}}
+
+{{#Sources}}
+<div id="sourcesMegaContainer">
+    <div class="barHider sourcesIcon" style="display: block;" onclick="toggle('sources')"></div>
+    <div class="section" style="display: none;">
+        <div class="bar sourcesIcon" onclick="toggle('sources')"></div>
+        <div id="sources" class="items sources">{{Sources}}</div>
+    </div>
+</div>
+<hr style="visibility:hidden">
+{{/Sources}}
+
+
+{{#Comments}}
+<div id="commentsMegaContainer">
+    <div class="barHider commentsIcon" style="display: block;" onclick="toggle('comments')"></div>
+    <div class="section" style="display: none;">
+        <div class="bar commentsIcon" onclick="toggle('comments')"></div>
+        <div id="comments" class="items comments">{{Comments}}</div>
+    </div>
+</div>
+<hr style="visibility:hidden">
+{{/Comments}}
+
+<div style="display:none;" id="flags">{{CardFlag}}</div>
+
+<div style="display: none;">
+    Si applicable, ce(tte) œuvre est mise à disposition selon les termes de la <a rel="license"
+        href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Licence Creative Commons Attribution - Pas
+        d’Utilisation Commerciale - Partage dans les Mêmes Conditions 4.0 International.</a>
+</div>
+
+<script>
+    function toggle(e) {
+        var box = document.getElementById(e)
+        var content = box.parentNode
+        var barHider = content.previousElementSibling
+
+        if (content.style.display == "none") {
+            barHider.style.display = "none"
+            content.style.display = "flex";
+        }
+        else {
+            barHider.style.display = "block"
+            content.style.display = "none"
+        }
+    }
+
+    var tagsDiv = document.getElementById("tags");
+    var flagsDiv = document.getElementById("flags");
+
+    var allSections = document.getElementsByClassName("section");
+    var allHiders = document.getElementsByClassName("barHider");
+    var allBars = document.getElementsByClassName("bar");
+
+    if (tagsDiv.innerHTML.includes("Difficile") || flagsDiv.innerHTML.includes("flag2")) {
+        for (var sectionDiv of allSections) {
+            sectionDiv.style.borderColor = "red red red red";
+        }
+
+        for (var hiderDiv of allHiders) {
+            hiderDiv.style.borderColor = "red red red red";
+        }
+
+        for (var barDiv of allBars) {
+            barDiv.style.borderColor = "red red red red";
+        }
+    }
+
+</script>
+
+```
+## Styling
+```css
+.card {
+font-family: arial;
+font-size: 20px;
+text-align: center;
+color: white;
+max-width: 1200px;
+margin-left: auto;
+margin-right: auto;
+}
+
+/* for centering with a pleasant width */
+max-width: 45em; /* corresponds to the font-size, this width is readable */
+margin: 0 auto; /* centers the text (once max-width is reached) */
+padding: 1em; /* for when the screen is smaller than max-width */
+}
+
+b { color: CornFlowerBlue; }
+u { font-weight: bold; color: Tomato;}
+i { color: MediumTurquoise; }
+
+/* for space between embedded lists*/
+ul > li:last-child {
+padding-bottom: 15px;
+}
+
+ul > li {
+padding-top: 7px
+}
+
+ol > li:last-child {
+padding-bottom: 15px;
+}
+
+ol > li {
+padding-top: 7px
+}
+
+/*Start of style added by resize image add-on. Don't edit directly or the edition will be lost. Edit via the add-on
+configuration */
+.mobile .card img {height:unset !important; width:unset !important;}
+/*End of style added by resize image add-on*/
+
+/*NEEEEEEEEEW*/
+.section, .mobile .night_mode .section {
+border : 2px solid;
+border-color : #e5e6e9 #dfe0e4 #d0d1d5;
+border-radius : 5px;
+position : relative;
+background-color: #373a41;
+margin : 5px 0;
+margin-left: 5%;
+margin-right: 5%;
+display:flex;
+}
+
+.bar, .mobile .night_mode .bar{
+border-radius : 3px;
+border-right : 2px solid;
+border-color : #e5e6e9 #dfe0e4 #d0d1d5;
+color : #fff;
+padding : 2px;
+padding-left : 35px;
+text-decoration : none;
+text-align: left;
+font-weight : bold;
+background : #365899;
+background-repeat : no-repeat;
+background-position : 5px center;
+writing-mode: vertical-lr;
+text-orientation: upright;
+min-height: 35px;
+cursor: pointer;
+transition: background-color 1.5s
+}
+
+.bar:hover {
+background-color: FireBrick;
+}
+
+.barHider:hover {
+background-color: FireBrick;
+transform: rotate(360deg);
+border: 2px solid;
+}
+
+.barHider, .mobile .night_mode .barHider{
+border-radius : 5px;
+border : 2px solid;
+border-color : #e5e6e9 #dfe0e4 #d0d1d5;
+color : #fff;
+padding : 2px;
+padding-left : 35px;
+text-decoration : none;
+text-align: left;
+font-weight : bold;
+background : #365899;
+background-repeat : no-repeat;
+background-position : 5px center;
+writing-mode: vertical-lr;
+text-orientation: upright;
+min-height: 35px;
+margin : 5px 0;
+margin-left: 5%;
+margin-right: 5%;
+display: none;
+cursor: pointer;
+transition: background-color 1.5s, transform 2s 0.25s
+}
+
+.items{
+margin : 0 12px;
+padding : 8px 0;
+flex-grow: 1;
+}
+
+.rectoIcon, .mobile .night_mode .rectoIcon{
+background-image : url(img_00d2b831.webp);
+}
+
+.recto{
+text-align:center;
+margin-left:5%
+}
+
+.answerIcon, .mobile .night_mode .answerIcon{
+background-image : url(img_c9bea8ee.webp);
+}
+
+.answer{
+text-align:left;
+margin-left:5%
+}
+
+.infoSupplementairesIcon, .mobile .night_mode .infoSupplementairesIcon{
+background-image : url(img_00726e87.webp);
+}
+
+.infoSupplementaires{
+text-align: left;
+}
+
+.tagsIcon, .mobile .night_mode .tagsIcon{
+background-image : url(img_b72dab7f.webp);
+}
+
+.tags{
+text-align: center;
+color:#FFA630;
+}
+
+.cartesLieesIcon, .mobile .night_mode .cartesLieesIcon{
+background-image : url(img_fe22b58d.webp);
+}
+
+.cartesLiees{
+text-align: left;
+}
+
+.mnemonicsIcon, .mobile .night_mode .mnemonicsIcon{
+background-image : url(img_6d333f45.webp);
+}
+
+.mnemonics{
+text-align: left;
+}
+
+.sourcesIcon, .mobile .night_mode .sourcesIcon{
+background-image : url(img_677479e9.webp);
+}
+
+.sources{
+text-align: left;
+}
+
+.errorsIcon, .mobile .night_mode .commentsIcon{
+background-image : url(img_96470f89.webp);
+}
+
+.errors{
+text-align: left;
+}
+
+.commentsIcon, .mobile .night_mode .commentsIcon{
+background-image : url(img_39da2a5a.webp);
+}
+
+.comments{
+text-align: left;
+}
+
+```
