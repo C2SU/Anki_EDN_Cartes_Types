@@ -46,6 +46,7 @@
     var elementsToCapitalize = document.querySelectorAll('.items, .items li');
     elementsToCapitalize.forEach(function (item) {
         var foundLetter = false;
+        var afterCloze = false;
 
         function capitalizeFirstTextNode(node) {
             if (foundLetter) return true;
@@ -55,6 +56,20 @@
                 var match = text.match(/[a-zA-ZÀ-ÿœŒæÆ]/);
                 if (match) {
                     var index = match.index;
+
+                    if (afterCloze) {
+                        var char = text.charAt(index);
+                        if (char === char.toUpperCase() && char !== char.toLowerCase()) {
+                            if (index + 1 < text.length) {
+                                var next = text.charAt(index + 1);
+                                if (next === next.toLowerCase() && next !== next.toUpperCase()) {
+                                    node.nodeValue = text.substring(0, index) + char.toLowerCase() + text.substring(index + 1);
+                                }
+                            }
+                        }
+                        foundLetter = true;
+                        return true;
+                    }
 
                     var followedByUpper = false;
                     if (index + 1 < text.length) {
@@ -77,6 +92,10 @@
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP') return false;
+                if (node.classList && node.classList.contains('cloze')) {
+                    afterCloze = true;
+                    return false;
+                }
                 for (var i = 0; i < node.childNodes.length; i++) {
                     if (capitalizeFirstTextNode(node.childNodes[i])) return true;
                 }
