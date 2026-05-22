@@ -56,9 +56,11 @@
                     var index = match.index;
 
                     // Si on est juste après un cloze, ne pas capitaliser ce mot
+                    // mais mettre en minuscule si c'est une majuscule isolée
                     if (afterCloze) {
                         var char = text.charAt(index);
                         if (char === char.toUpperCase() && char !== char.toLowerCase()) {
+                            // Vérifier si c'est suivi d'une minuscule (= majuscule isolée à corriger)
                             if (index + 1 < text.length) {
                                 var next = text.charAt(index + 1);
                                 if (next === next.toLowerCase() && next !== next.toUpperCase()) {
@@ -78,11 +80,21 @@
                         }
                     }
 
-                    var hasNumberBefore = false;
-                    if (index > 0) {
-                        var beforeMatch = text.substring(0, index).match(/[0-9]/);
-                        if (beforeMatch) hasNumberBefore = true;
+                    // Récupérer tout le texte qui précède la lettre dans le même élément
+                    var precedingText = '';
+                    var current = node;
+                    while (current && current !== item) {
+                        var sib = current.previousSibling;
+                        while (sib) {
+                            precedingText = (sib.textContent || '') + precedingText;
+                            sib = sib.previousSibling;
+                        }
+                        current = current.parentNode;
                     }
+                    precedingText += text.substring(0, index);
+
+                    var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
+
                     if (!followedByUpper && !hasNumberBefore) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
@@ -90,8 +102,15 @@
                     return true;
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
-                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP') return false;
+                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP' || node.tagName === 'ANKI-MATHJAX' || node.tagName === 'MJX-CONTAINER' || node.tagName === 'MATH') return false;
+                // Détecter les spans cloze pour ne pas capitaliser le mot suivant
                 if (node.classList && node.classList.contains('cloze')) {
+                    if (!foundLetter) {
+                        // Si le cloze est le premier élément, capitaliser le texte à l'intérieur
+                        for (var ci = 0; ci < node.childNodes.length; ci++) {
+                            if (capitalizeFirstTextNode(node.childNodes[ci])) break;
+                        }
+                    }
                     afterCloze = true;
                     return false;
                 }
@@ -300,11 +319,21 @@
                         }
                     }
 
-                    var hasNumberBefore = false;
-                    if (index > 0) {
-                        var beforeMatch = text.substring(0, index).match(/[0-9]/);
-                        if (beforeMatch) hasNumberBefore = true;
+                    // Récupérer tout le texte qui précède la lettre dans le même élément
+                    var precedingText = '';
+                    var current = node;
+                    while (current && current !== item) {
+                        var sib = current.previousSibling;
+                        while (sib) {
+                            precedingText = (sib.textContent || '') + precedingText;
+                            sib = sib.previousSibling;
+                        }
+                        current = current.parentNode;
                     }
+                    precedingText += text.substring(0, index);
+
+                    var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
+
                     if (!followedByUpper && !hasNumberBefore) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
@@ -312,9 +341,15 @@
                     return true;
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
-                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP') return false;
+                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP' || node.tagName === 'ANKI-MATHJAX' || node.tagName === 'MJX-CONTAINER' || node.tagName === 'MATH') return false;
                 // Détecter les spans cloze pour ne pas capitaliser le mot suivant
                 if (node.classList && node.classList.contains('cloze')) {
+                    if (!foundLetter) {
+                        // Si le cloze est le premier élément, capitaliser le texte à l'intérieur
+                        for (var ci = 0; ci < node.childNodes.length; ci++) {
+                            if (capitalizeFirstTextNode(node.childNodes[ci])) break;
+                        }
+                    }
                     afterCloze = true;
                     return false;
                 }
@@ -325,6 +360,73 @@
             return false;
         }
         capitalizeFirstTextNode(item);
+    });
+    } catch(e) {}
+
+    // -- Capitaliser la première lettre de chaque ENTRÉE dans les cartes liées --
+    // (chaque segment séparé par <br> ou après un <kbd> doit avoir sa propre majuscule)
+    try {
+    var clItems = document.querySelectorAll('.cartesLiees');
+    clItems.forEach(function(container) {
+        // Fonction récursive pour capitaliser le premier texte d'un segment
+        function capitalizeFirstInNode(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                var txt = node.nodeValue;
+                var m = txt.match(/[a-zA-ZÀ-ÿœŒæÆ]/);
+                if (m) {
+                    var idx = m.index;
+                    var followUpper = false;
+                    if (idx + 1 < txt.length) {
+                        var nc = txt.charAt(idx + 1);
+                        if (nc === nc.toUpperCase() && nc !== nc.toLowerCase()) followUpper = true;
+                    }
+
+                    // Récupérer tout le texte qui précède la lettre dans le même segment (depuis le dernier BR/KBD ou début)
+                    var precedingText = '';
+                    var current = node;
+                    while (current && current !== container) {
+                        var sib = current.previousSibling;
+                        while (sib) {
+                            if (sib.tagName === 'BR' || sib.tagName === 'KBD') break;
+                            precedingText = (sib.textContent || '') + precedingText;
+                            sib = sib.previousSibling;
+                        }
+                        if (sib && (sib.tagName === 'BR' || sib.tagName === 'KBD')) break;
+                        current = current.parentNode;
+                    }
+                    precedingText += txt.substring(0, idx);
+
+                    var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
+
+                    if (!followUpper && !hasNumberBefore) {
+                        node.nodeValue = txt.substring(0, idx) + txt.charAt(idx).toUpperCase() + txt.substring(idx + 1);
+                    }
+                    return true;
+                }
+                return false;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.tagName === 'KBD' || node.tagName === 'BR' || node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'SUP') return false;
+                if (node.tagName === 'SPAN' && node.classList.contains('edn-nid')) return false;
+                // Descendre récursivement dans les éléments inline (B, I, U, SPAN, etc.)
+                for (var j = 0; j < node.childNodes.length; j++) {
+                    if (capitalizeFirstInNode(node.childNodes[j])) return true;
+                }
+            }
+            return false;
+        }
+        var childNodes = Array.from(container.childNodes);
+        var segmentStart = true;
+        for (var ci = 0; ci < childNodes.length; ci++) {
+            var cnode = childNodes[ci];
+            if (cnode.nodeName === 'BR') { segmentStart = true; continue; }
+            if (cnode.nodeType === Node.ELEMENT_NODE && cnode.tagName === 'KBD') { segmentStart = true; continue; }
+            if (cnode.nodeType === Node.ELEMENT_NODE && cnode.tagName === 'SPAN' && cnode.classList.contains('edn-nid')) continue;
+            if (segmentStart) {
+                if (capitalizeFirstInNode(cnode)) {
+                    segmentStart = false;
+                }
+            }
+        }
     });
     } catch(e) {}
 
@@ -455,6 +557,10 @@ background-color: #2f2f31;
 .card u, u { font-weight: bold; color: Tomato !important; }
 .card i, i { color: MediumTurquoise !important; }
 
+/* Protection MathJax : empêcher les styles bold/italic/underline de polluer les formules */
+mjx-container, mjx-container *, .MathJax, .MathJax * { color: inherit !important; font-weight: inherit !important; text-decoration: inherit !important; }
+anki-mathjax, anki-mathjax * { color: inherit !important; font-weight: inherit !important; text-decoration: inherit !important; font-style: inherit !important; }
+
 /* for space between embedded lists*/
 ul > li:last-child {
 padding-bottom: 5px;
@@ -512,6 +618,8 @@ font-weight : bold;
 background : #365899;
 background-repeat : no-repeat;
 background-position : 5px center;
+background-size: 25px auto;
+background-size: 25px auto;
 writing-mode: vertical-lr;
 text-orientation: upright;
 min-height: 35px;
@@ -542,6 +650,8 @@ font-weight : bold;
 background : #365899;
 background-repeat : no-repeat;
 background-position : 5px center;
+background-size: 25px auto;
+background-size: 25px auto;
 writing-mode: vertical-lr;
 text-orientation: upright;
 min-height: 35px;
@@ -570,6 +680,22 @@ flex-grow: 1;
 .mobile .section {
   max-width: 90%;
   overflow-x: hidden;
+}
+
+.mobile .bar {
+  flex-shrink: 0;
+  min-width: 35px;
+  max-width: 35px;
+  background-size: 25px auto;
+  overflow: hidden;
+}
+
+.mobile .barHider {
+  flex-shrink: 0;
+  min-width: 35px;
+  max-width: 35px;
+  background-size: 25px auto;
+  overflow: hidden;
 }
 
 .mobile .items table {
@@ -638,7 +764,7 @@ background-image : url(img_677479e9.webp);
 text-align: left;
 }
 
-.errorsIcon, .mobile .night_mode .commentsIcon{
+.errorsIcon, .mobile .night_mode .errorsIcon{
 background-image : url(img_96470f89.webp);
 }
 
@@ -666,25 +792,27 @@ text-align: left;
 }
 .card img.fullscreen-img {
   position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: 100vw !important;
-  max-height: 100vh !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: 95vw !important;
+  max-height: 95vh !important;
   object-fit: contain !important;
   z-index: 99999 !important;
   margin: 0 !important;
   padding: 0 !important;
   cursor: zoom-out !important;
+  border-radius: 0 !important;
   box-shadow: 0 0 0 100vmax rgba(255, 255, 255, 0.95) !important;
   background-color: rgba(255, 255, 255, 0.95) !important;
+  image-rendering: auto !important;
 }
-.nightMode .card img.fullscreen-img, .night_mode .card img.fullscreen-img, .mobile .night_mode .card img.fullscreen-img {
-  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.9) !important;
-  background-color: rgba(0, 0, 0, 0.9) !important;
+.nightMode .card img.fullscreen-img, .night_mode .card img.fullscreen-img, .mobile .night_mode .card img.fullscreen-img,
+.nightMode.card img.fullscreen-img, .night_mode.card img.fullscreen-img {
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.92) !important;
+  background-color: rgba(0, 0, 0, 0.92) !important;
 }
 .img-legend {
   font-size: 50%;
@@ -701,7 +829,7 @@ text-align: left;
 
 /* Hover Preview Card */
 #edn-preview-box {
-  position: absolute;
+  position: fixed;
   z-index: 10000;
   max-width: 400px;
   background-color: #f5f6f7;
@@ -729,4 +857,17 @@ text-align: left;
 .preview-verso {
   font-size: 14px;
 }
+
+/* Correction des liens dans la preview */
+#edn-preview-box a {
+    color: #365899;
+    text-decoration: none;
+}
+#edn-preview-box a:hover {
+    text-decoration: underline;
+}
+.nightMode #edn-preview-box a, .night_mode #edn-preview-box a {
+    color: #5b9bd5;
+}
+
 ```

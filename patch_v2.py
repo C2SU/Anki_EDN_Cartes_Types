@@ -30,58 +30,6 @@ NEW_CAPITALIZE_FRONT = r"""    // -- Capitaliser la première lettre de chaque c
     var elementsToCapitalize = document.querySelectorAll('.items, .items li');
     elementsToCapitalize.forEach(function (item) {
         var foundLetter = false;
-
-        function capitalizeFirstTextNode(node) {
-            if (foundLetter) return true;
-
-            if (node.nodeType === Node.TEXT_NODE) {
-                var text = node.nodeValue;
-                var match = text.match(/[a-zA-ZÀ-ÿœŒæÆ]/);
-                if (match) {
-                    var index = match.index;
-
-                    var followedByUpper = false;
-                    if (index + 1 < text.length) {
-                        var nextChar = text.charAt(index + 1);
-                        if (nextChar === nextChar.toUpperCase() && nextChar !== nextChar.toLowerCase()) {
-                            followedByUpper = true;
-                        }
-                    }
-
-                    var hasNumberBefore = false;
-                    if (index > 0) {
-                        var beforeMatch = text.substring(0, index).match(/[0-9]/);
-                        if (beforeMatch) hasNumberBefore = true;
-                    }
-                    if (!followedByUpper && !hasNumberBefore) {
-                        node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
-                    }
-                    foundLetter = true;
-                    return true;
-                }
-            } else if (node.nodeType === Node.ELEMENT_NODE) {
-                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP') return false;
-                for (var i = 0; i < node.childNodes.length; i++) {
-                    if (capitalizeFirstTextNode(node.childNodes[i])) return true;
-                }
-            }
-            return false;
-        }
-        capitalizeFirstTextNode(item);
-    });
-    } catch(e) {}"""
-
-# =====================================================================
-# NEW capitalize function (Back Template version — full, with cloze fix)
-# =====================================================================
-# Same as above but also handles cloze: after a .cloze span,
-# the next word should NOT be uppercased (it's not the first word)
-
-NEW_CAPITALIZE_BACK = r"""    // -- Capitaliser la première lettre de chaque champ et de chaque puce --
-    try {
-    var elementsToCapitalize = document.querySelectorAll('.items, .items li');
-    elementsToCapitalize.forEach(function (item) {
-        var foundLetter = false;
         var afterCloze = false;
 
         function capitalizeFirstTextNode(node) {
@@ -118,11 +66,21 @@ NEW_CAPITALIZE_BACK = r"""    // -- Capitaliser la première lettre de chaque ch
                         }
                     }
 
-                    var hasNumberBefore = false;
-                    if (index > 0) {
-                        var beforeMatch = text.substring(0, index).match(/[0-9]/);
-                        if (beforeMatch) hasNumberBefore = true;
+                    // Récupérer tout le texte qui précède la lettre dans le même élément
+                    var precedingText = '';
+                    var current = node;
+                    while (current && current !== item) {
+                        var sib = current.previousSibling;
+                        while (sib) {
+                            precedingText = (sib.textContent || '') + precedingText;
+                            sib = sib.previousSibling;
+                        }
+                        current = current.parentNode;
                     }
+                    precedingText += text.substring(0, index);
+
+                    var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
+
                     if (!followedByUpper && !hasNumberBefore) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
@@ -130,9 +88,15 @@ NEW_CAPITALIZE_BACK = r"""    // -- Capitaliser la première lettre de chaque ch
                     return true;
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
-                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP') return false;
+                if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'A' || node.tagName === 'SUP' || node.tagName === 'ANKI-MATHJAX' || node.tagName === 'MJX-CONTAINER' || node.tagName === 'MATH') return false;
                 // Détecter les spans cloze pour ne pas capitaliser le mot suivant
                 if (node.classList && node.classList.contains('cloze')) {
+                    if (!foundLetter) {
+                        // Si le cloze est le premier élément, capitaliser le texte à l'intérieur
+                        for (var ci = 0; ci < node.childNodes.length; ci++) {
+                            if (capitalizeFirstTextNode(node.childNodes[ci])) break;
+                        }
+                    }
                     afterCloze = true;
                     return false;
                 }
@@ -145,6 +109,14 @@ NEW_CAPITALIZE_BACK = r"""    // -- Capitaliser la première lettre de chaque ch
         capitalizeFirstTextNode(item);
     });
     } catch(e) {}"""
+
+# =====================================================================
+# NEW capitalize function (Back Template version — full, with cloze fix)
+# =====================================================================
+# Same as above but also handles cloze: after a .cloze span,
+# the next word should NOT be uppercased (it's not the first word)
+
+NEW_CAPITALIZE_BACK = NEW_CAPITALIZE_FRONT
 
 
 def replace_capitalize_block(content, new_block):
