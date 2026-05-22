@@ -662,17 +662,23 @@ flex-grow: 1;
 }
 
 .mobile .bar {
+  box-sizing: border-box;
   flex-shrink: 0;
+  width: 35px;
   min-width: 35px;
   max-width: 35px;
+  padding-left: 0;
   background-size: 25px auto;
   overflow: hidden;
 }
 
 .mobile .barHider {
+  box-sizing: border-box;
   flex-shrink: 0;
+  width: 35px;
   min-width: 35px;
   max-width: 35px;
+  padding-left: 0;
   background-size: 25px auto;
   overflow: hidden;
 }
