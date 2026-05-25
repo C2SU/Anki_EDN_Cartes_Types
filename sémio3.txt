@@ -100,7 +100,7 @@
 
                     var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
 
-                    if (!followedByUpper && !hasNumberBefore) {
+                    if (!followedByUpper && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
@@ -346,7 +346,7 @@
 
                     var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
 
-                    if (!followedByUpper && !hasNumberBefore) {
+                    if (!followedByUpper && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
@@ -878,4 +878,8 @@ text-align: left;
     color: #5b9bd5;
 }
 
+
+.cartesLiees > br:first-child {
+  display: none;
+}
 ```

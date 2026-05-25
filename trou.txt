@@ -95,7 +95,7 @@
 
                     var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
 
-                    if (!followedByUpper && !hasNumberBefore) {
+                    if (!followedByUpper && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
@@ -331,7 +331,7 @@ if (tagsDiv && tagsDiv.innerHTML.includes("Difficile") || flagsDiv && flagsDiv.i
 
                     var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
 
-                    if (!followedByUpper && !hasNumberBefore) {
+                    if (!followedByUpper && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
@@ -860,4 +860,8 @@ background-size: 25px auto;
     color: #5b9bd5;
 }
 
+
+.cartesLiees > br:first-child {
+  display: none;
+}
 ```
