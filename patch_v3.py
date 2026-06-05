@@ -37,11 +37,17 @@ NEW_CAPITALIZE_TEXT_NODE = r"""    // -- Capitaliser la première lettre de chaq
                         return true;
                     }
 
-                    var followedByUpper = false;
-                    if (index + 1 < text.length) {
-                        var nextChar = text.charAt(index + 1);
-                        if (nextChar === nextChar.toUpperCase() && nextChar !== nextChar.toLowerCase()) {
-                            followedByUpper = true;
+                    var hasUpperElsewhere = false;
+                    var wordMatch = text.substring(index).match(/^[a-zA-ZÀ-ÿœŒæÆ]+/);
+                    if (wordMatch) {
+                        var word = wordMatch[0];
+                        var restOfWord = word.substring(1);
+                        for (var i = 0; i < restOfWord.length; i++) {
+                            var char = restOfWord.charAt(i);
+                            if (char === char.toUpperCase() && char !== char.toLowerCase()) {
+                                hasUpperElsewhere = true;
+                                break;
+                            }
                         }
                     }
 
@@ -60,7 +66,7 @@ NEW_CAPITALIZE_TEXT_NODE = r"""    // -- Capitaliser la première lettre de chaq
 
                     var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
 
-                    if (!followedByUpper && !hasNumberBefore) {
+                    if (!hasUpperElsewhere && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
@@ -101,10 +107,18 @@ NEW_CAPITALIZE_IN_NODE = r"""    // -- Capitaliser la première lettre de chaque
                 var m = txt.match(/[a-zA-ZÀ-ÿœŒæÆ]/);
                 if (m) {
                     var idx = m.index;
-                    var followUpper = false;
-                    if (idx + 1 < txt.length) {
-                        var nc = txt.charAt(idx + 1);
-                        if (nc === nc.toUpperCase() && nc !== nc.toLowerCase()) followUpper = true;
+                    var hasUpperElsewhere = false;
+                    var wordMatch = txt.substring(idx).match(/^[a-zA-ZÀ-ÿœŒæÆ]+/);
+                    if (wordMatch) {
+                        var word = wordMatch[0];
+                        var restOfWord = word.substring(1);
+                        for (var i = 0; i < restOfWord.length; i++) {
+                            var char = restOfWord.charAt(i);
+                            if (char === char.toUpperCase() && char !== char.toLowerCase()) {
+                                hasUpperElsewhere = true;
+                                break;
+                            }
+                        }
                     }
 
                     // Récupérer tout le texte qui précède la lettre dans le même segment (depuis le dernier BR/KBD ou début)
@@ -124,7 +138,7 @@ NEW_CAPITALIZE_IN_NODE = r"""    // -- Capitaliser la première lettre de chaque
 
                     var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
 
-                    if (!followUpper && !hasNumberBefore) {
+                    if (!hasUpperElsewhere && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
                         node.nodeValue = txt.substring(0, idx) + txt.charAt(idx).toUpperCase() + txt.substring(idx + 1);
                     }
                     return true;

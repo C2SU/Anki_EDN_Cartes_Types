@@ -75,11 +75,17 @@
                         return true;
                     }
 
-                    var followedByUpper = false;
-                    if (index + 1 < text.length) {
-                        var nextChar = text.charAt(index + 1);
-                        if (nextChar === nextChar.toUpperCase() && nextChar !== nextChar.toLowerCase()) {
-                            followedByUpper = true;
+                    var hasUpperElsewhere = false;
+                    var wordMatch = text.substring(index).match(/^[a-zA-ZÀ-ÿœŒæÆ]+/);
+                    if (wordMatch) {
+                        var word = wordMatch[0];
+                        var restOfWord = word.substring(1);
+                        for (var i = 0; i < restOfWord.length; i++) {
+                            var char = restOfWord.charAt(i);
+                            if (char === char.toUpperCase() && char !== char.toLowerCase()) {
+                                hasUpperElsewhere = true;
+                                break;
+                            }
                         }
                     }
 
@@ -98,7 +104,7 @@
 
                     var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
 
-                    if (!followedByUpper && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
+                    if (!hasUpperElsewhere && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
@@ -314,11 +320,17 @@
                         return true;
                     }
 
-                    var followedByUpper = false;
-                    if (index + 1 < text.length) {
-                        var nextChar = text.charAt(index + 1);
-                        if (nextChar === nextChar.toUpperCase() && nextChar !== nextChar.toLowerCase()) {
-                            followedByUpper = true;
+                    var hasUpperElsewhere = false;
+                    var wordMatch = text.substring(index).match(/^[a-zA-ZÀ-ÿœŒæÆ]+/);
+                    if (wordMatch) {
+                        var word = wordMatch[0];
+                        var restOfWord = word.substring(1);
+                        for (var i = 0; i < restOfWord.length; i++) {
+                            var char = restOfWord.charAt(i);
+                            if (char === char.toUpperCase() && char !== char.toLowerCase()) {
+                                hasUpperElsewhere = true;
+                                break;
+                            }
                         }
                     }
 
@@ -337,7 +349,7 @@
 
                     var hasNumberBefore = precedingText.match(/[0-9](?:%|‰|°|er|re|e|ème|nd|rd|th)?\s*$/i) ? true : false;
 
-                    if (!followedByUpper && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
+                    if (!hasUpperElsewhere && !hasNumberBefore && !precedingText.trim().endsWith('\\')) {
                         node.nodeValue = text.substring(0, index) + text.charAt(index).toUpperCase() + text.substring(index + 1);
                     }
                     foundLetter = true;
@@ -436,6 +448,148 @@
 
     // -- Images : zoom au clic, lien au double-clic --
     try {
+    if (!window.ednZoomHandlerRegistered) {
+        window.ednZoomHandlerRegistered = true;
+        window.ednZoomState = {
+            fullscreenImg: null,
+            imgScale: 1,
+            imgPanX: 0,
+            imgPanY: 0,
+            imgIsDragging: false,
+            imgDragStartX: 0,
+            imgDragStartY: 0,
+            imgHasDragged: false
+        };
+        
+        var updateImgTransform = function() {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            state.fullscreenImg.style.setProperty(
+                'transform', 
+                'translate(calc(-50% + ' + state.imgPanX + 'px), calc(-50% + ' + state.imgPanY + 'px)) scale(' + state.imgScale + ')', 
+                'important'
+            );
+        };
+        
+        var closeFullscreen = function() {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            state.fullscreenImg.classList.remove('fullscreen-img');
+            state.fullscreenImg.style.removeProperty('transform');
+            state.fullscreenImg.style.cursor = 'zoom-in';
+            state.fullscreenImg = null;
+            state.imgScale = 1;
+            state.imgPanX = 0;
+            state.imgPanY = 0;
+        };
+        
+        window.addEventListener('mousemove', function(e) {
+            var state = window.ednZoomState;
+            if (!state.imgIsDragging || !state.fullscreenImg) return;
+            var dx = e.clientX - (state.imgDragStartX + state.imgPanX);
+            var dy = e.clientY - (state.imgDragStartY + state.imgPanY);
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                state.imgHasDragged = true;
+            }
+            state.imgPanX = e.clientX - state.imgDragStartX;
+            state.imgPanY = e.clientY - state.imgDragStartY;
+            updateImgTransform();
+        });
+        
+        window.addEventListener('mouseup', function(e) {
+            var state = window.ednZoomState;
+            if (state.imgIsDragging) {
+                state.imgIsDragging = false;
+            }
+        });
+        
+        window.addEventListener('wheel', function(e) {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var zoomFactor = 0.05;
+            var delta = -e.deltaY;
+            if (e.deltaMode === 1) delta *= 40;
+            else if (e.deltaMode === 2) delta *= 800;
+            
+            var factor = 1 + (delta * zoomFactor) / 100;
+            factor = Math.max(0.8, Math.min(1.2, factor));
+            
+            var oldScale = state.imgScale;
+            state.imgScale = Math.min(10, Math.max(1, state.imgScale * factor));
+            
+            if (state.imgScale === 1) {
+                state.imgPanX = 0;
+                state.imgPanY = 0;
+            } else if (state.imgScale !== oldScale) {
+                var ratio = state.imgScale / oldScale;
+                var mx = e.clientX - window.innerWidth / 2;
+                var my = e.clientY - window.innerHeight / 2;
+                state.imgPanX = mx - (mx - state.imgPanX) * ratio;
+                state.imgPanY = my - (my - state.imgPanY) * ratio;
+            }
+            
+            updateImgTransform();
+        }, { passive: false });
+        
+        window.addEventListener('keydown', function(e) {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            
+            if (e.ctrlKey) {
+                if (e.key === '+' || e.key === '=' || e.key === 'Add') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var oldScale = state.imgScale;
+                    state.imgScale = Math.min(10, state.imgScale * 1.25);
+                    if (state.imgScale !== oldScale) {
+                        var ratio = state.imgScale / oldScale;
+                        state.imgPanX = state.imgPanX * ratio;
+                        state.imgPanY = state.imgPanY * ratio;
+                    }
+                    updateImgTransform();
+                } else if (e.key === '-' || e.key === 'Subtract') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var oldScale = state.imgScale;
+                    state.imgScale = Math.max(1, state.imgScale / 1.25);
+                    if (state.imgScale === 1) {
+                        state.imgPanX = 0;
+                        state.imgPanY = 0;
+                    } else if (state.imgScale !== oldScale) {
+                        var ratio = state.imgScale / oldScale;
+                        state.imgPanX = state.imgPanX * ratio;
+                        state.imgPanY = state.imgPanY * ratio;
+                    }
+                    updateImgTransform();
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.imgScale = 1;
+                    state.imgPanX = 0;
+                    state.imgPanY = 0;
+                    updateImgTransform();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                closeFullscreen();
+            }
+        });
+        
+        window.addEventListener('click', function(e) {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            // Si le clic n'est pas sur l'image elle-même, fermer le zoom
+            if (e.target !== state.fullscreenImg) {
+                closeFullscreen();
+            }
+        });
+    }
+
     var allImages = document.querySelectorAll('.card img');
     allImages.forEach(function(img) {
         if (img.getAttribute('data-img-handled')) return;
@@ -454,12 +608,50 @@
         }
 
         if (!document.documentElement.classList.contains('mobile')) {
+            img.addEventListener('mousedown', function(e) {
+                var state = window.ednZoomState;
+                if (!this.classList.contains('fullscreen-img')) return;
+                if (e.button !== 0) return;
+                state.imgIsDragging = true;
+                state.imgHasDragged = false;
+                state.imgDragStartX = e.clientX - state.imgPanX;
+                state.imgDragStartY = e.clientY - state.imgPanY;
+                e.preventDefault();
+            });
+
             img.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
                 e.preventDefault();
-                this.classList.toggle('fullscreen-img');
-                this.style.cursor = this.classList.contains('fullscreen-img') ? 'zoom-out' : 'zoom-in';
+                
+                var state = window.ednZoomState;
+                if (!this.classList.contains('fullscreen-img')) {
+                    if (state.fullscreenImg && state.fullscreenImg !== this) {
+                        state.fullscreenImg.classList.remove('fullscreen-img');
+                        state.fullscreenImg.style.removeProperty('transform');
+                        state.fullscreenImg.style.cursor = 'zoom-in';
+                    }
+                    
+                    this.classList.add('fullscreen-img');
+                    this.style.cursor = 'zoom-out';
+                    state.fullscreenImg = this;
+                    state.imgScale = 1;
+                    state.imgPanX = 0;
+                    state.imgPanY = 0;
+                    state.imgIsDragging = false;
+                    state.imgHasDragged = false;
+                    this.style.setProperty('transform', 'translate(-50%, -50%) scale(1)', 'important');
+                } else {
+                    if (!state.imgHasDragged) {
+                        this.classList.remove('fullscreen-img');
+                        this.style.removeProperty('transform');
+                        this.style.cursor = 'zoom-in';
+                        state.fullscreenImg = null;
+                        state.imgScale = 1;
+                        state.imgPanX = 0;
+                        state.imgPanY = 0;
+                    }
+                }
             });
         }
 
@@ -771,8 +963,8 @@ text-align: left;
 
 /* Images et légende */
 .card img {
-  max-width: 80% !important;
-  max-height: 600px !important;
+  max-width: 100% !important;
+  max-height: 400px !important;
   object-fit: contain;
   display: block;
   margin: 0 auto 5px auto;
@@ -860,7 +1052,14 @@ text-align: left;
 }
 
 
+
+
+.cartesLiees br {
+  display: block !important;
+  content: "" !important;
+}
+
 .cartesLiees > br:first-child {
-  display: none;
+  display: none !important;
 }
 ```
