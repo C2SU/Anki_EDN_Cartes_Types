@@ -442,6 +442,40 @@
     try {
     var clContainers = document.querySelectorAll('.cartesLiees');
     clContainers.forEach(function (container) {
+        // Supprimer les <br> en tout début de conteneur s'il n'y a pas de texte significatif avant
+        var child = container.firstChild;
+        while (child) {
+            if (child.nodeType === Node.TEXT_NODE) {
+                if (child.textContent.replace(/\u00A0/g, ' ').trim() !== "") {
+                    break;
+                }
+                child = child.nextSibling;
+            } else if (child.nodeName === 'BR') {
+                var next = child.nextSibling;
+                child.parentNode.removeChild(child);
+                child = next;
+            } else {
+                break;
+            }
+        }
+
+        // Supprimer les <br> en toute fin de conteneur s'il n'y a pas de texte significatif après
+        var lastChild = container.lastChild;
+        while (lastChild) {
+            if (lastChild.nodeType === Node.TEXT_NODE) {
+                if (lastChild.textContent.replace(/\u00A0/g, ' ').trim() !== "") {
+                    break;
+                }
+                lastChild = lastChild.previousSibling;
+            } else if (lastChild.nodeName === 'BR') {
+                var prev = lastChild.previousSibling;
+                lastChild.parentNode.removeChild(lastChild);
+                lastChild = prev;
+            } else {
+                break;
+            }
+        }
+
         var kbds = container.querySelectorAll('kbd.clickable_cards');
         kbds.forEach(function(kbd) {
             var next = kbd.nextSibling;
@@ -1080,7 +1114,5 @@ text-align: left;
   content: "" !important;
 }
 
-.cartesLiees > br:first-child {
-  display: none !important;
-}
+
 ```
