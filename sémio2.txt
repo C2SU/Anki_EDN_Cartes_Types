@@ -1,5 +1,6 @@
 ## Front Template
 ```html
+<script src="_edn_prefs.js"></script>
 <div id="nomMegaContainer">
     <div class="barHider nomIcon" onclick="toggle('nom')"></div>
     <div class="section">
@@ -10,6 +11,7 @@
 
 <div style="display:none;" id="flagsData">{{CardFlag}}</div>
 <div style="display:none;" id="tagsData">{{Tags}}</div>
+<div style="display:none;" id="errorsData">{{Erreurs faites}}</div>
 
 <div style="display:none;" id="flagsData">{{CardFlag}}</div>
 <div style="display:none;" id="tagsData">{{Tags}}</div>
@@ -47,6 +49,300 @@
         for (var hiderDiv of allHiders) hiderDiv.style.borderColor = "blue blue blue blue";
         for (var barDiv of allBars) barDiv.style.borderColor = "blue blue blue blue";
     }
+
+        // ===== EDN CARD STYLES: Rang badge + Specialty icons =====
+    // Preferences from localStorage("edn_card_prefs")
+    (function ednCardStyles() {
+        try {
+            var prefs = {};
+            try {
+                if (typeof edn_prefs !== "undefined") {
+                    prefs = edn_prefs;
+                } else {
+                    prefs = JSON.parse(localStorage.getItem("edn_card_prefs") || "{}");
+                }
+            } catch(e) {}
+            var showRank  = prefs.showRankBadge     === true;
+            var isMobile = document.documentElement.classList.contains('mobile') || document.body.classList.contains('mobile');
+            var showIcons = isMobile ? (prefs.showSpecialtyIconMobile === true) : (prefs.showSpecialtyIcon !== false);
+            
+            var tags = (document.getElementById("tagsData") || {innerHTML:""}).innerHTML;
+            var rang = tags.includes("Rang::A") ? "A" : tags.includes("Rang::B") ? "B" : tags.includes("Rang::C") ? "C" : "?";
+            
+            // 4. Appliquer la couleur de rang sur tous les .bar
+            var rectoSection = document.querySelector('.section');
+            if (rectoSection) {
+                if (showRank) {
+                    var bars = document.querySelectorAll('.bar, .barHider');
+                    bars.forEach(function(b) {
+                        b.classList.add('edn-rang-' + rang);
+                    });
+                }
+            }
+
+            // 5. Pictogrammes de matière (compatible recto et answer)
+            if (showIcons) {
+                var rightOffset = 12;
+                var SPEC = {
+                    'Cardiologie':                  '\uD83E\uDEC0',  // organ heart (Cardiologie)
+                    'Canc\u00e9rologie':            '\uD83C\uDF97\uFE0F', // Ruban (Cancero)
+                    'CMF':                          '\uD83E\uDDB7',  // Dent (CMF)
+                    'Dermatologie':                 '\uD83E\uDE72',  // Peau/pansement (Derma)
+                    'Douleur':                      '\uD83E\uDE79',  // Pansement (Douleur)
+                    'Endocrinologie':               '\uD83E\uDD8B',  // Papillon (Endocrino)
+                    'G\u00e9riatrie':              '\uD83E\uDDD3',  // Vieux (Geriatrie)
+                    'Gyn\u00e9cologie':            '\uD83E\uDD30',  // Grossesse (Gyneco)
+                    'Gyn\u00e9cologie-Obst\u00e9trique': '\uD83E\uDD30',
+                    'H\u00e9matologie':            '\uD83E\uDE78',  // Sang (Hemato)
+                    'HGE':                          '\uD83E\uDD57',  // Salade (HGE digestif)
+                    'Gastro-ent\u00e9rologie':     '\uD83E\uDD57',
+                    'Immunologie':                  '\uD83D\uDEE1\uFE0F', // Bouclier (Immuno)
+                    'Infectiologie':                '\uD83E\uDDA0',  // Microbe (Infectio)
+                    'Locomoteur':                   '\uD83E\uDDB4',  // Os (Locomoteur)
+                    'MIR':                          '\uD83D\uDEA8',  // Gyrophare (MIR)
+                    'M\u00e9decine interne':        '\uD83E\uDE7A',  // Stethoscope (Med interne)
+                    'M\u00e9decine L\u00e9gale':  '\u2696\uFE0F',  // Balance (Med Legale)
+                    'MPR':                          '\uD83E\uDE7C',  // Bequille (MPR)
+                    'Neurochirurgie':               '\uD83E\uDDE0',  // Cerveau (Neurochir)
+                    'Neurologie':                   '\uD83E\uDDE0',  // Cerveau (Neuro)
+                    'N\u00e9phrologie':            '\uD83D\uDCA7',  // Goutte (Nephro)
+                    'N\u00e9phro':                '\uD83D\uDCA7',
+                    'Nutrition':                    '\uD83C\uDF4E',  // Pomme (Nutrition)
+                    'Oncologie':                    '\uD83C\uDF97\uFE0F',
+                    'Ophtalmologie':                '\uD83D\uDC41\uFE0F', // Oeil (Ophtalmo)
+                    'ORL':                          '\uD83D\uDC42',  // Oreille (ORL)
+                    'Orth\u00f8p\u00e9die-Traumatologie': '\uD83D\uDC80', // Crane (Ortho)
+                    'Orthop\u00e9die-Traumatologie': '\uD83D\uDC80',
+                    'Pharmacologie':                '\uD83D\uDC8A',  // Pilule (Pharmaco)
+                    'Pneumologie':                  '\uD83E\uDEC1',  // Poumons (Pneumo)
+                    'Psychiatrie':                  '\uD83D\uDCAC',  // Bulle (Psychiatrie)
+                    'P\u00e9diatrie':              '\uD83E\uDDF8',  // Peluche (Pediatrie)
+                    'Rhumatologie':                 '\uD83D\uDCAA',  // Muscle (Rhumato)
+                    'Sant\u00e9 Publique':         '\uD83C\uDF0D',  // Globe (Sante publique)
+                    'Sant\u00e9-publique':         '\uD83C\uDF0D',
+                    'Th\u00e9rapeutique':          '\uD83D\uDC8A',  // Pilule (Therapeutique)
+                    'Urgences':                     '\uD83D\uDE91',  // Ambulance (Urgences)
+                    'Urologie':                     '\uD83D\uDEB9',  // WC Homme (Urologie)
+                    'LCA':                          '\uD83D\uDCCB',   // Presse-papier (LCA)
+                    'Immuno':                       '\uD83D\uDEE1\uFE0F',
+                    'Neuro':                        '\uD83E\uDDE0',
+                    'Cardio':                       '\uD83E\uDEC0',
+                    'Derma':                        '\uD83E\uDE72',
+                    'Endocrino':                    '\uD83E\uDD8B',
+                    'Hemato':                       '\uD83E\uDE78',
+                    'H\u00e9mato':                   '\uD83E\uDE78',
+                    'Infectio':                     '\uD83E\uDDA0',
+                    'Ophtalmo':                     '\uD83D\uDC41\uFE0F',
+                    'Ortho':                        '\uD83D\uDC80',
+                    'Pharmaco':                     '\uD83D\uDC8A',
+                    'Pneumo':                       '\uD83E\uDEC1',
+                    'Rhumato':                      '\uD83D\uDCAA'
+                };
+                var tagParts = [];
+                tags.toLowerCase().split(/\s+/).forEach(function(t) {
+                    t.split('::').forEach(function(part) {
+                        if (part) tagParts.push(part.trim());
+                    });
+                });
+                
+                var icons = [];
+                var added = {};
+                var tagsLower = tags.toLowerCase();
+                
+                for (var sp in SPEC) {
+                    var spLower = sp.toLowerCase();
+                    var matched = false;
+                    
+                    if (spLower.includes(' ') || spLower.includes('-')) {
+                        matched = tagsLower.includes(spLower);
+                    } else {
+                        matched = tagParts.includes(spLower);
+                    }
+                    
+                    if (matched) {
+                        var emoji = SPEC[sp];
+                        if (!added[emoji]) {
+                            icons.push(emoji);
+                            added[emoji] = true;
+                        }
+                    }
+                }
+                if (icons.length) {
+                    var contentItems = document.querySelector('.section .items');
+                    if (contentItems && contentItems.parentNode) {
+                        if (!contentItems.parentNode.querySelector('.edn-specialty-icons')) {
+                            var iconDiv = document.createElement("div");
+                            iconDiv.className = "edn-specialty-icons" + (showRank ? " edn-rang-" + rang : "");
+                            iconDiv.textContent = icons.join(" ");
+                            contentItems.parentNode.insertBefore(iconDiv, contentItems);
+                            contentItems.style.paddingRight = "45px";
+                            contentItems.style.paddingLeft = "45px";
+                        }
+                    }
+                }
+            }
+
+            // 6. Synchronisation de la note sentinelle pour mobiles
+            if (tags.includes('EDN::Preferences::Sentinel')) {
+                var errorsDiv = document.getElementById('errorsData');
+                if (errorsDiv) {
+                    var jsonText = errorsDiv.innerText || errorsDiv.textContent;
+                    jsonText = jsonText.trim();
+                    if (jsonText.startsWith('{') && jsonText.endsWith('}')) {
+                        try {
+                            localStorage.setItem('edn_card_prefs', jsonText);
+                            var recto = document.getElementById('recto') || document.getElementById('verso') || document.getElementById('answer') || document.getElementById('nom') || document.getElementById('description');
+                            if (recto) {
+                                recto.innerHTML = "<div style='color:#10B981; font-weight:bold; padding:20px; font-size:1.1em; border: 2px dashed #10B981; border-radius: 8px; background: rgba(16,185,129,0.05);'>" +
+                                                  "Settings sync successful on this device!<br>" +
+                                                  "<span style='font-size:0.8em; font-weight:normal; color:#666;'>" +
+                                                  "localStorage configured: " + jsonText + "</span></div>";
+                            }
+                        } catch(e) {}
+                    }
+                }
+            }
+
+            // 7. Encadrement selon les drapeaux (showFlagBorders)
+            var showFlags = prefs.showFlagBorders !== false;
+            var realColor = null;
+            var virtualColor = null;
+            var dualFlagsReview = prefs.reviewDualFlags === true || prefs.dualFlagsEnabled === true;
+
+            if (showFlags) {
+                var flags = (document.getElementById('flagsData') || document.getElementById('flags') || {innerHTML:''}).innerHTML.trim();
+                var flagColorMap = {
+                    'flag1': '#E53E3E', // Rouge
+                    'flag2': '#DD6B20', // Orange
+                    'flag3': '#38A169', // Vert
+                    'flag4': '#3182CE', // Bleu
+                    'flag5': '#D53F8C', // Rose
+                    'flag6': '#00A3C4', // Turquoise
+                    'flag7': '#805AD5'  // Violet
+                };
+                
+                // 1. Drapeaux Anki réels
+                for (var key in flagColorMap) {
+                    if (flags.includes(key)) {
+                        realColor = flagColorMap[key];
+                        break;
+                    }
+                }
+                var tagsDataText = (document.getElementById('tagsData') || document.getElementById('tags') || {innerHTML:''}).innerHTML;
+                if (!realColor && tagsDataText.includes("Difficile")) {
+                    realColor = '#DD6B20';
+                }
+                if (!realColor && tagsDataText.includes("Bleu")) {
+                    realColor = '#3182CE';
+                }
+
+                // 2. Coloration des cartes notées Again X fois (Drapeau 2 / Orange)
+                if (!realColor && prefs.flagAgainEnabled === true) {
+                    var isDifficult = false;
+                    if (typeof window !== 'undefined' && window._ednIsDifficultCard === true) {
+                        isDifficult = true;
+                    } else if (document.getElementById('ednDifficultFlagData')) {
+                        isDifficult = true;
+                    } else if (typeof window !== 'undefined' && typeof window._ednCardLapses === 'number') {
+                        var thresh = prefs.flagAgainCount || 7;
+                        if (window._ednCardLapses >= thresh) {
+                            isDifficult = true;
+                        }
+                    }
+                    if (isDifficult) {
+                        realColor = '#DD6B20'; // Orange (Drapeau 2)
+                    }
+                }
+
+                // 3. Drapeau virtuel pour cartes neuves (1ère révision -> couleur personnalisable, défaut Bleu)
+                var showVirtualNew = isMobile ? (prefs.virtualBlueFlagForNewCardsMobile === true) : (prefs.virtualBlueFlagForNewCards === true);
+                if (showVirtualNew) {
+                    var isNew = false;
+                    if (typeof window !== 'undefined' && window._ednIsNewCard === true) {
+                        isNew = true;
+                    } else if (document.getElementById('ednVirtualFlagData')) {
+                        isNew = true;
+                    } else if (document.body && (document.body.classList.contains('edn-card-new') || document.body.dataset.cardState === 'new')) {
+                        isNew = true;
+                    } else if (typeof states !== 'undefined' && states && states.current) {
+                        if (states.current.normal && states.current.normal.new !== undefined) {
+                            isNew = true;
+                        } else if (states.current.filtered && states.current.filtered.rescheduling && states.current.filtered.rescheduling.originalState && states.current.filtered.rescheduling.originalState.new !== undefined) {
+                            isNew = true;
+                        }
+                    }
+                    if (isNew) {
+                        var newFlagKey = prefs.virtual_flag_color_new || 'flag4';
+                        virtualColor = flagColorMap[newFlagKey] || '#3182CE';
+                    }
+                }
+            }
+
+            function setBorderColors(color, dualVirtColor) {
+                var sections = document.getElementsByClassName("section");
+                var hiders = document.getElementsByClassName("barHider");
+                var bars = document.getElementsByClassName("bar");
+                if (dualVirtColor && color) {
+                    var dualGradient = "linear-gradient(to right, " + dualVirtColor + " 50%, " + color + " 50%) 1";
+                    for (var s of sections) { s.style.borderColor = "transparent"; s.style.borderImage = dualGradient; }
+                    for (var h of hiders) { h.style.borderColor = "transparent"; h.style.borderImage = dualGradient; }
+                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = dualVirtColor; }
+                } else if (color) {
+                    for (var s of sections) { s.style.borderImage = "none"; s.style.borderColor = color; }
+                    for (var h of hiders) { h.style.borderImage = "none"; h.style.borderColor = color; }
+                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = color; }
+                } else {
+                    for (var s of sections) { s.style.borderImage = "none"; s.style.borderColor = ""; }
+                    for (var h of hiders) { h.style.borderImage = "none"; h.style.borderColor = ""; }
+                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = ""; }
+                }
+            }
+
+            if (showFlags && dualFlagsReview && virtualColor && realColor) {
+                setBorderColors(realColor, virtualColor);
+            } else {
+                var activeColor = realColor || virtualColor;
+                setBorderColors(activeColor);
+            }
+
+            // Support Mobile AnkiDroid asynchrone pour virtual flag & Again X fois
+            if (showFlags && typeof AnkiDroidJS !== 'undefined') {
+                try {
+                    var ankiApi = AnkiDroidJS.init({ version: "0.0.3", developer: "anki_edn" });
+                    if (ankiApi) {
+                        if (!realColor && prefs.flagAgainEnabled === true && typeof ankiApi.ankiGetCardLapses === 'function') {
+                            ankiApi.ankiGetCardLapses().then(function(lapses) {
+                                var thresh = prefs.flagAgainCount || 7;
+                                if (lapses >= thresh) {
+                                    realColor = '#DD6B20';
+                                    if (dualFlagsReview && virtualColor && realColor) {
+                                        setBorderColors(realColor, virtualColor);
+                                    } else {
+                                        setBorderColors(realColor);
+                                    }
+                                }
+                            }).catch(function() {});
+                        }
+                        if (prefs.virtualBlueFlagForNewCardsMobile === true && typeof ankiApi.ankiGetCardType === 'function') {
+                            ankiApi.ankiGetCardType().then(function(type) {
+                                if (type === 0 || type === "0") {
+                                    var newFlagKey = prefs.virtual_flag_color_new || 'flag4';
+                                    var map = { 'flag1': '#E53E3E', 'flag2': '#DD6B20', 'flag3': '#38A169', 'flag4': '#3182CE', 'flag5': '#D53F8C', 'flag6': '#00A3C4', 'flag7': '#805AD5' };
+                                    virtualColor = map[newFlagKey] || '#3182CE';
+                                    if (dualFlagsReview && virtualColor && realColor) {
+                                        setBorderColors(realColor, virtualColor);
+                                    } else if (!realColor) {
+                                        setBorderColors(virtualColor);
+                                    }
+                                }
+                            }).catch(function() {});
+                        }
+                    }
+                } catch(e) {}
+            }
+        } catch(e) {}
+    })();
+    // ===== END EDN CARD STYLES =====
     // -- Capitaliser la première lettre de chaque champ et de chaque puce --
     try {
     var elementsToCapitalize = document.querySelectorAll('.items, .items li');
@@ -137,10 +433,251 @@
         capitalizeFirstTextNode(item);
     });
     } catch(e) {}
+
+
+
+    // -- Images : zoom au clic, lien au double-clic --
+    try {
+    if (!window.ednZoomHandlerRegistered) {
+        window.ednZoomHandlerRegistered = true;
+        window.ednZoomState = {
+            fullscreenImg: null,
+            imgScale: 1,
+            imgPanX: 0,
+            imgPanY: 0,
+            imgIsDragging: false,
+            imgDragStartX: 0,
+            imgDragStartY: 0,
+            imgHasDragged: false
+        };
+        
+        var updateImgTransform = function() {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            state.fullscreenImg.style.setProperty(
+                'transform', 
+                'translate(calc(-50% + ' + state.imgPanX + 'px), calc(-50% + ' + state.imgPanY + 'px)) scale(' + state.imgScale + ')', 
+                'important'
+            );
+        };
+        
+        var closeFullscreen = function() {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            state.fullscreenImg.classList.remove('fullscreen-img');
+            state.fullscreenImg.style.removeProperty('transform');
+            state.fullscreenImg.style.cursor = 'zoom-in';
+            state.fullscreenImg = null;
+            state.imgScale = 1;
+            state.imgPanX = 0;
+            state.imgPanY = 0;
+        };
+        
+        window.addEventListener('mousemove', function(e) {
+            var state = window.ednZoomState;
+            if (!state.imgIsDragging || !state.fullscreenImg) return;
+            var dx = e.clientX - (state.imgDragStartX + state.imgPanX);
+            var dy = e.clientY - (state.imgDragStartY + state.imgPanY);
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                state.imgHasDragged = true;
+            }
+            state.imgPanX = e.clientX - state.imgDragStartX;
+            state.imgPanY = e.clientY - state.imgDragStartY;
+            updateImgTransform();
+        });
+        
+        window.addEventListener('mouseup', function(e) {
+            var state = window.ednZoomState;
+            if (state.imgIsDragging) {
+                state.imgIsDragging = false;
+            }
+        });
+        
+        window.addEventListener('wheel', function(e) {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var zoomFactor = 0.05;
+            var delta = -e.deltaY;
+            if (e.deltaMode === 1) delta *= 40;
+            else if (e.deltaMode === 2) delta *= 800;
+            
+            var factor = 1 + (delta * zoomFactor) / 100;
+            factor = Math.max(0.8, Math.min(1.2, factor));
+            
+            var oldScale = state.imgScale;
+            state.imgScale = Math.min(10, Math.max(1, state.imgScale * factor));
+            
+            if (state.imgScale === 1) {
+                state.imgPanX = 0;
+                state.imgPanY = 0;
+            } else if (state.imgScale !== oldScale) {
+                var ratio = state.imgScale / oldScale;
+                var mx = e.clientX - window.innerWidth / 2;
+                var my = e.clientY - window.innerHeight / 2;
+                state.imgPanX = mx - (mx - state.imgPanX) * ratio;
+                state.imgPanY = my - (my - state.imgPanY) * ratio;
+            }
+            
+            updateImgTransform();
+        }, { passive: false });
+        
+        window.addEventListener('keydown', function(e) {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            
+            if (e.ctrlKey) {
+                if (e.key === '+' || e.key === '=' || e.key === 'Add') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var oldScale = state.imgScale;
+                    state.imgScale = Math.min(10, state.imgScale * 1.25);
+                    if (state.imgScale !== oldScale) {
+                        var ratio = state.imgScale / oldScale;
+                        state.imgPanX = state.imgPanX * ratio;
+                        state.imgPanY = state.imgPanY * ratio;
+                    }
+                    updateImgTransform();
+                } else if (e.key === '-' || e.key === 'Subtract') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var oldScale = state.imgScale;
+                    state.imgScale = Math.max(1, state.imgScale / 1.25);
+                    if (state.imgScale === 1) {
+                        state.imgPanX = 0;
+                        state.imgPanY = 0;
+                    } else if (state.imgScale !== oldScale) {
+                        var ratio = state.imgScale / oldScale;
+                        state.imgPanX = state.imgPanX * ratio;
+                        state.imgPanY = state.imgPanY * ratio;
+                    }
+                    updateImgTransform();
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.imgScale = 1;
+                    state.imgPanX = 0;
+                    state.imgPanY = 0;
+                    updateImgTransform();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                closeFullscreen();
+            }
+        });
+        
+        window.addEventListener('click', function(e) {
+            var state = window.ednZoomState;
+            if (!state.fullscreenImg) return;
+            // Si le clic n'est pas sur l'image elle-même, fermer le zoom
+            if (e.target !== state.fullscreenImg) {
+                closeFullscreen();
+            }
+        });
+    }
+
+    var allImages = document.querySelectorAll('.card img');
+    allImages.forEach(function(img) {
+        if (img.getAttribute('data-img-handled')) return;
+        img.setAttribute('data-img-handled', 'true');
+        
+        img.classList.remove('fullscreen-img'); 
+
+        var parentLink = img.closest('a');
+        if (parentLink) {
+            var href = parentLink.getAttribute('href');
+            if (href && !href.startsWith('javascript:')) {
+                parentLink.setAttribute('data-href', href);
+                parentLink.href = 'javascript:void(0)';
+                parentLink.style.cursor = 'zoom-in';
+            }
+        }
+
+        if (!document.documentElement.classList.contains('mobile')) {
+            img.addEventListener('mousedown', function(e) {
+                var state = window.ednZoomState;
+                if (!this.classList.contains('fullscreen-img')) return;
+                if (e.button !== 0) return;
+                state.imgIsDragging = true;
+                state.imgHasDragged = false;
+                state.imgDragStartX = e.clientX - state.imgPanX;
+                state.imgDragStartY = e.clientY - state.imgPanY;
+                e.preventDefault();
+            });
+
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                
+                var state = window.ednZoomState;
+                if (!this.classList.contains('fullscreen-img')) {
+                    if (state.fullscreenImg && state.fullscreenImg !== this) {
+                        state.fullscreenImg.classList.remove('fullscreen-img');
+                        state.fullscreenImg.style.removeProperty('transform');
+                        state.fullscreenImg.style.cursor = 'zoom-in';
+                    }
+                    
+                    this.classList.add('fullscreen-img');
+                    this.style.cursor = 'zoom-out';
+                    state.fullscreenImg = this;
+                    state.imgScale = 1;
+                    state.imgPanX = 0;
+                    state.imgPanY = 0;
+                    state.imgIsDragging = false;
+                    state.imgHasDragged = false;
+                    this.style.setProperty('transform', 'translate(-50%, -50%) scale(1)', 'important');
+                } else {
+                    if (!state.imgHasDragged) {
+                        this.classList.remove('fullscreen-img');
+                        this.style.removeProperty('transform');
+                        this.style.cursor = 'zoom-in';
+                        state.fullscreenImg = null;
+                        state.imgScale = 1;
+                        state.imgPanX = 0;
+                        state.imgPanY = 0;
+                    }
+                }
+            });
+        }
+
+        if (!document.documentElement.classList.contains('mobile')) {
+            img.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                var href = this.closest('a') ? this.closest('a').getAttribute('data-href') : null;
+                if (href) {
+                    window.location.href = href;
+                }
+            });
+        }
+        
+        var next = img.nextSibling;
+        while (next && (next.nodeType === Node.TEXT_NODE && next.textContent.trim() === '' || next.nodeName === 'BR')) {
+            next = next.nextSibling;
+        }
+        if (next) {
+            if (next.nodeName === 'I') {
+                next.classList.add('img-legend');
+            } else if (next.nodeName === 'DIV' && next.firstElementChild && next.firstElementChild.nodeName === 'I' && next.childNodes.length === 1) {
+                next.classList.add('img-legend');
+            }
+        }
+    });
+    } catch(e) {}
+
 </script>
 ```
 ## Back Template
 ```html
+<script src="_edn_prefs.js"></script>
+<div style="display:none;" id="flagsData">{{CardFlag}}</div>
+<div style="display:none;" id="tagsData">{{Tags}}</div>
+<div style="display:none;" id="errorsData">{{Erreurs faites}}</div>
 {{FrontSide}}
 
 <hr style="visibility:hidden">
@@ -248,6 +785,8 @@
 <script>
     function toggle(e) {
         var box = document.getElementById(e);
+        if (!box && e === 'answer') box = document.getElementById('verso');
+        if (!box && e === 'verso') box = document.getElementById('answer');
         if (!box) return;
         var content = box.parentNode;
         if (!content) return;
@@ -297,6 +836,300 @@
             barDiv.style.borderColor = "blue blue blue blue";
         }
     }
+
+    // ===== EDN CARD STYLES: Rang badge + Specialty icons =====
+    // Preferences from localStorage("edn_card_prefs")
+    (function ednCardStyles() {
+        try {
+            var prefs = {};
+            try {
+                if (typeof edn_prefs !== "undefined") {
+                    prefs = edn_prefs;
+                } else {
+                    prefs = JSON.parse(localStorage.getItem("edn_card_prefs") || "{}");
+                }
+            } catch(e) {}
+            var showRank  = prefs.showRankBadge     === true;
+            var isMobile = document.documentElement.classList.contains('mobile') || document.body.classList.contains('mobile');
+            var showIcons = isMobile ? (prefs.showSpecialtyIconMobile === true) : (prefs.showSpecialtyIcon !== false);
+            
+            var tags = (document.getElementById("tagsData") || {innerHTML:""}).innerHTML;
+            var rang = tags.includes("Rang::A") ? "A" : tags.includes("Rang::B") ? "B" : tags.includes("Rang::C") ? "C" : "?";
+            
+            // 4. Appliquer la couleur de rang sur tous les .bar
+            var rectoSection = document.querySelector('.section');
+            if (rectoSection) {
+                if (showRank) {
+                    var bars = document.querySelectorAll('.bar, .barHider');
+                    bars.forEach(function(b) {
+                        b.classList.add('edn-rang-' + rang);
+                    });
+                }
+            }
+
+            // 5. Pictogrammes de matière (compatible recto et answer)
+            if (showIcons) {
+                var rightOffset = 12;
+                var SPEC = {
+                    'Cardiologie':                  '\uD83E\uDEC0',  // organ heart (Cardiologie)
+                    'Canc\u00e9rologie':            '\uD83C\uDF97\uFE0F', // Ruban (Cancero)
+                    'CMF':                          '\uD83E\uDDB7',  // Dent (CMF)
+                    'Dermatologie':                 '\uD83E\uDE72',  // Peau/pansement (Derma)
+                    'Douleur':                      '\uD83E\uDE79',  // Pansement (Douleur)
+                    'Endocrinologie':               '\uD83E\uDD8B',  // Papillon (Endocrino)
+                    'G\u00e9riatrie':              '\uD83E\uDDD3',  // Vieux (Geriatrie)
+                    'Gyn\u00e9cologie':            '\uD83E\uDD30',  // Grossesse (Gyneco)
+                    'Gyn\u00e9cologie-Obst\u00e9trique': '\uD83E\uDD30',
+                    'H\u00e9matologie':            '\uD83E\uDE78',  // Sang (Hemato)
+                    'HGE':                          '\uD83E\uDD57',  // Salade (HGE digestif)
+                    'Gastro-ent\u00e9rologie':     '\uD83E\uDD57',
+                    'Immunologie':                  '\uD83D\uDEE1\uFE0F', // Bouclier (Immuno)
+                    'Infectiologie':                '\uD83E\uDDA0',  // Microbe (Infectio)
+                    'Locomoteur':                   '\uD83E\uDDB4',  // Os (Locomoteur)
+                    'MIR':                          '\uD83D\uDEA8',  // Gyrophare (MIR)
+                    'M\u00e9decine interne':        '\uD83E\uDE7A',  // Stethoscope (Med interne)
+                    'M\u00e9decine L\u00e9gale':  '\u2696\uFE0F',  // Balance (Med Legale)
+                    'MPR':                          '\uD83E\uDE7C',  // Bequille (MPR)
+                    'Neurochirurgie':               '\uD83E\uDDE0',  // Cerveau (Neurochir)
+                    'Neurologie':                   '\uD83E\uDDE0',  // Cerveau (Neuro)
+                    'N\u00e9phrologie':            '\uD83D\uDCA7',  // Goutte (Nephro)
+                    'N\u00e9phro':                '\uD83D\uDCA7',
+                    'Nutrition':                    '\uD83C\uDF4E',  // Pomme (Nutrition)
+                    'Oncologie':                    '\uD83C\uDF97\uFE0F',
+                    'Ophtalmologie':                '\uD83D\uDC41\uFE0F', // Oeil (Ophtalmo)
+                    'ORL':                          '\uD83D\uDC42',  // Oreille (ORL)
+                    'Orth\u00f8p\u00e9die-Traumatologie': '\uD83D\uDC80', // Crane (Ortho)
+                    'Orthop\u00e9die-Traumatologie': '\uD83D\uDC80',
+                    'Pharmacologie':                '\uD83D\uDC8A',  // Pilule (Pharmaco)
+                    'Pneumologie':                  '\uD83E\uDEC1',  // Poumons (Pneumo)
+                    'Psychiatrie':                  '\uD83D\uDCAC',  // Bulle (Psychiatrie)
+                    'P\u00e9diatrie':              '\uD83E\uDDF8',  // Peluche (Pediatrie)
+                    'Rhumatologie':                 '\uD83D\uDCAA',  // Muscle (Rhumato)
+                    'Sant\u00e9 Publique':         '\uD83C\uDF0D',  // Globe (Sante publique)
+                    'Sant\u00e9-publique':         '\uD83C\uDF0D',
+                    'Th\u00e9rapeutique':          '\uD83D\uDC8A',  // Pilule (Therapeutique)
+                    'Urgences':                     '\uD83D\uDE91',  // Ambulance (Urgences)
+                    'Urologie':                     '\uD83D\uDEB9',  // WC Homme (Urologie)
+                    'LCA':                          '\uD83D\uDCCB',   // Presse-papier (LCA)
+                    'Immuno':                       '\uD83D\uDEE1\uFE0F',
+                    'Neuro':                        '\uD83E\uDDE0',
+                    'Cardio':                       '\uD83E\uDEC0',
+                    'Derma':                        '\uD83E\uDE72',
+                    'Endocrino':                    '\uD83E\uDD8B',
+                    'Hemato':                       '\uD83E\uDE78',
+                    'H\u00e9mato':                   '\uD83E\uDE78',
+                    'Infectio':                     '\uD83E\uDDA0',
+                    'Ophtalmo':                     '\uD83D\uDC41\uFE0F',
+                    'Ortho':                        '\uD83D\uDC80',
+                    'Pharmaco':                     '\uD83D\uDC8A',
+                    'Pneumo':                       '\uD83E\uDEC1',
+                    'Rhumato':                      '\uD83D\uDCAA'
+                };
+                var tagParts = [];
+                tags.toLowerCase().split(/\s+/).forEach(function(t) {
+                    t.split('::').forEach(function(part) {
+                        if (part) tagParts.push(part.trim());
+                    });
+                });
+                
+                var icons = [];
+                var added = {};
+                var tagsLower = tags.toLowerCase();
+                
+                for (var sp in SPEC) {
+                    var spLower = sp.toLowerCase();
+                    var matched = false;
+                    
+                    if (spLower.includes(' ') || spLower.includes('-')) {
+                        matched = tagsLower.includes(spLower);
+                    } else {
+                        matched = tagParts.includes(spLower);
+                    }
+                    
+                    if (matched) {
+                        var emoji = SPEC[sp];
+                        if (!added[emoji]) {
+                            icons.push(emoji);
+                            added[emoji] = true;
+                        }
+                    }
+                }
+                if (icons.length) {
+                    var contentItems = document.querySelector('.section .items');
+                    if (contentItems && contentItems.parentNode) {
+                        if (!contentItems.parentNode.querySelector('.edn-specialty-icons')) {
+                            var iconDiv = document.createElement("div");
+                            iconDiv.className = "edn-specialty-icons" + (showRank ? " edn-rang-" + rang : "");
+                            iconDiv.textContent = icons.join(" ");
+                            contentItems.parentNode.insertBefore(iconDiv, contentItems);
+                            contentItems.style.paddingRight = "45px";
+                            contentItems.style.paddingLeft = "45px";
+                        }
+                    }
+                }
+            }
+
+            // 6. Synchronisation de la note sentinelle pour mobiles
+            if (tags.includes('EDN::Preferences::Sentinel')) {
+                var errorsDiv = document.getElementById('errorsData');
+                if (errorsDiv) {
+                    var jsonText = errorsDiv.innerText || errorsDiv.textContent;
+                    jsonText = jsonText.trim();
+                    if (jsonText.startsWith('{') && jsonText.endsWith('}')) {
+                        try {
+                            localStorage.setItem('edn_card_prefs', jsonText);
+                            var recto = document.getElementById('recto') || document.getElementById('verso') || document.getElementById('answer') || document.getElementById('nom') || document.getElementById('description');
+                            if (recto) {
+                                recto.innerHTML = "<div style='color:#10B981; font-weight:bold; padding:20px; font-size:1.1em; border: 2px dashed #10B981; border-radius: 8px; background: rgba(16,185,129,0.05);'>" +
+                                                  "Settings sync successful on this device!<br>" +
+                                                  "<span style='font-size:0.8em; font-weight:normal; color:#666;'>" +
+                                                  "localStorage configured: " + jsonText + "</span></div>";
+                            }
+                        } catch(e) {}
+                    }
+                }
+            }
+
+            // 7. Encadrement selon les drapeaux (showFlagBorders)
+            var showFlags = prefs.showFlagBorders !== false;
+            var realColor = null;
+            var virtualColor = null;
+            var dualFlagsReview = prefs.reviewDualFlags === true || prefs.dualFlagsEnabled === true;
+
+            if (showFlags) {
+                var flags = (document.getElementById('flagsData') || document.getElementById('flags') || {innerHTML:''}).innerHTML.trim();
+                var flagColorMap = {
+                    'flag1': '#E53E3E', // Rouge
+                    'flag2': '#DD6B20', // Orange
+                    'flag3': '#38A169', // Vert
+                    'flag4': '#3182CE', // Bleu
+                    'flag5': '#D53F8C', // Rose
+                    'flag6': '#00A3C4', // Turquoise
+                    'flag7': '#805AD5'  // Violet
+                };
+                
+                // 1. Drapeaux Anki réels
+                for (var key in flagColorMap) {
+                    if (flags.includes(key)) {
+                        realColor = flagColorMap[key];
+                        break;
+                    }
+                }
+                var tagsDataText = (document.getElementById('tagsData') || document.getElementById('tags') || {innerHTML:''}).innerHTML;
+                if (!realColor && tagsDataText.includes("Difficile")) {
+                    realColor = '#DD6B20';
+                }
+                if (!realColor && tagsDataText.includes("Bleu")) {
+                    realColor = '#3182CE';
+                }
+
+                // 2. Coloration des cartes notées Again X fois (Drapeau 2 / Orange)
+                if (!realColor && prefs.flagAgainEnabled === true) {
+                    var isDifficult = false;
+                    if (typeof window !== 'undefined' && window._ednIsDifficultCard === true) {
+                        isDifficult = true;
+                    } else if (document.getElementById('ednDifficultFlagData')) {
+                        isDifficult = true;
+                    } else if (typeof window !== 'undefined' && typeof window._ednCardLapses === 'number') {
+                        var thresh = prefs.flagAgainCount || 7;
+                        if (window._ednCardLapses >= thresh) {
+                            isDifficult = true;
+                        }
+                    }
+                    if (isDifficult) {
+                        realColor = '#DD6B20'; // Orange (Drapeau 2)
+                    }
+                }
+
+                // 3. Drapeau virtuel pour cartes neuves (1ère révision -> couleur personnalisable, défaut Bleu)
+                var showVirtualNew = isMobile ? (prefs.virtualBlueFlagForNewCardsMobile === true) : (prefs.virtualBlueFlagForNewCards === true);
+                if (showVirtualNew) {
+                    var isNew = false;
+                    if (typeof window !== 'undefined' && window._ednIsNewCard === true) {
+                        isNew = true;
+                    } else if (document.getElementById('ednVirtualFlagData')) {
+                        isNew = true;
+                    } else if (document.body && (document.body.classList.contains('edn-card-new') || document.body.dataset.cardState === 'new')) {
+                        isNew = true;
+                    } else if (typeof states !== 'undefined' && states && states.current) {
+                        if (states.current.normal && states.current.normal.new !== undefined) {
+                            isNew = true;
+                        } else if (states.current.filtered && states.current.filtered.rescheduling && states.current.filtered.rescheduling.originalState && states.current.filtered.rescheduling.originalState.new !== undefined) {
+                            isNew = true;
+                        }
+                    }
+                    if (isNew) {
+                        var newFlagKey = prefs.virtual_flag_color_new || 'flag4';
+                        virtualColor = flagColorMap[newFlagKey] || '#3182CE';
+                    }
+                }
+            }
+
+            function setBorderColors(color, dualVirtColor) {
+                var sections = document.getElementsByClassName("section");
+                var hiders = document.getElementsByClassName("barHider");
+                var bars = document.getElementsByClassName("bar");
+                if (dualVirtColor && color) {
+                    var dualGradient = "linear-gradient(to right, " + dualVirtColor + " 50%, " + color + " 50%) 1";
+                    for (var s of sections) { s.style.borderColor = "transparent"; s.style.borderImage = dualGradient; }
+                    for (var h of hiders) { h.style.borderColor = "transparent"; h.style.borderImage = dualGradient; }
+                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = dualVirtColor; }
+                } else if (color) {
+                    for (var s of sections) { s.style.borderImage = "none"; s.style.borderColor = color; }
+                    for (var h of hiders) { h.style.borderImage = "none"; h.style.borderColor = color; }
+                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = color; }
+                } else {
+                    for (var s of sections) { s.style.borderImage = "none"; s.style.borderColor = ""; }
+                    for (var h of hiders) { h.style.borderImage = "none"; h.style.borderColor = ""; }
+                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = ""; }
+                }
+            }
+
+            if (showFlags && dualFlagsReview && virtualColor && realColor) {
+                setBorderColors(realColor, virtualColor);
+            } else {
+                var activeColor = realColor || virtualColor;
+                setBorderColors(activeColor);
+            }
+
+            // Support Mobile AnkiDroid asynchrone pour virtual flag & Again X fois
+            if (showFlags && typeof AnkiDroidJS !== 'undefined') {
+                try {
+                    var ankiApi = AnkiDroidJS.init({ version: "0.0.3", developer: "anki_edn" });
+                    if (ankiApi) {
+                        if (!realColor && prefs.flagAgainEnabled === true && typeof ankiApi.ankiGetCardLapses === 'function') {
+                            ankiApi.ankiGetCardLapses().then(function(lapses) {
+                                var thresh = prefs.flagAgainCount || 7;
+                                if (lapses >= thresh) {
+                                    realColor = '#DD6B20';
+                                    if (dualFlagsReview && virtualColor && realColor) {
+                                        setBorderColors(realColor, virtualColor);
+                                    } else {
+                                        setBorderColors(realColor);
+                                    }
+                                }
+                            }).catch(function() {});
+                        }
+                        if (prefs.virtualBlueFlagForNewCardsMobile === true && typeof ankiApi.ankiGetCardType === 'function') {
+                            ankiApi.ankiGetCardType().then(function(type) {
+                                if (type === 0 || type === "0") {
+                                    var newFlagKey = prefs.virtual_flag_color_new || 'flag4';
+                                    var map = { 'flag1': '#E53E3E', 'flag2': '#DD6B20', 'flag3': '#38A169', 'flag4': '#3182CE', 'flag5': '#D53F8C', 'flag6': '#00A3C4', 'flag7': '#805AD5' };
+                                    virtualColor = map[newFlagKey] || '#3182CE';
+                                    if (dualFlagsReview && virtualColor && realColor) {
+                                        setBorderColors(realColor, virtualColor);
+                                    } else if (!realColor) {
+                                        setBorderColors(virtualColor);
+                                    }
+                                }
+                            }).catch(function() {});
+                        }
+                    }
+                } catch(e) {}
+            }
+        } catch(e) {}
+    })();
+    // ===== END EDN CARD STYLES =====
 
 
     // -- Capitaliser la première lettre de chaque champ et de chaque puce --
@@ -738,8 +1571,36 @@
             }
         });
     }
-    window.scrollTo(0, 0);
-    setTimeout(function() { window.scrollTo({top: 0, behavior: 'instant'}); }, 10);
+    function forceScrollToTop() {
+        try {
+            window.scrollTo(0, 0);
+        } catch(e) {}
+        try {
+            if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+        } catch(e) {}
+        try {
+            if (document.documentElement) document.documentElement.scrollTop = 0;
+        } catch(e) {}
+        try {
+            if (document.body) document.body.scrollTop = 0;
+        } catch(e) {}
+        try {
+            var qa = document.getElementById('qa');
+            if (qa) qa.scrollTop = 0;
+        } catch(e) {}
+    }
+
+    forceScrollToTop();
+    if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(forceScrollToTop);
+    }
+    [10, 30, 50, 100, 150, 200, 300, 500, 800].forEach(function(delay) {
+        setTimeout(forceScrollToTop, delay);
+    });
+    window.addEventListener('load', forceScrollToTop);
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(forceScrollToTop);
+    }
 
 </script>
 
@@ -813,7 +1674,7 @@ border-radius: 5px;
 position: relative;
 background-color: #f5f6f7;
 color: #1d2129;
-margin: 5px 0;
+margin : 16px 0 8px 0;
 margin-left: 5%;
 margin-right: 5%;
 display: flex;
@@ -875,7 +1736,7 @@ background-size: 25px auto;
 writing-mode: vertical-lr;
 text-orientation: upright;
 min-height: 35px;
-margin: 5px 0;
+margin : 16px 0 8px 0;
 margin-left: 5%;
 margin-right: 5%;
 display: none;
@@ -899,7 +1760,7 @@ flex-grow: 1;
 
 .mobile .section {
   max-width: 90%;
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 .mobile .bar {
@@ -1115,5 +1976,135 @@ text-align: left;
   content: "" !important;
 }
 
+
+
+/* ═══════════════════════════════════════════════════════════
+   EDN CARD STYLES — Rang badge & Specialty icons
+   Contrôlé via localStorage('edn_card_prefs')
+   ═══════════════════════════════════════════════════════════ */
+
+/* --- Barre de rang (verticale, intérieure gauche) --- */
+.edn-rang-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    border-radius: 3px 0 0 3px;
+    z-index: 2;
+    pointer-events: none;
+    transition: background-color 0.3s;
+}
+.bar.edn-rang-A, .barHider.edn-rang-A { background-color: #1A1A1A !important; }
+.bar.edn-rang-B, .barHider.edn-rang-B { background-color: #3B82F6 !important; }
+.bar.edn-rang-C, .barHider.edn-rang-C { background-color: #10B981 !important; }
+.bar.edn-rang-\?, .barHider.edn-rang-\? { background-color: #718096 !important; }
+
+.edn-specialty-icons.edn-rang-A { border-color: #1A1A1A !important; }
+.edn-specialty-icons.edn-rang-B { border-color: #3B82F6 !important; }
+.edn-specialty-icons.edn-rang-C { border-color: #10B981 !important; }
+.edn-specialty-icons.edn-rang-\? { border-color: #718096 !important; }
+
+/* --- Badge pill rang (encoche en haut à droite) --- */
+.edn-rang-badge {
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    z-index: 10;
+    pointer-events: none;
+    line-height: 1.2;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.edn-rang-badge.edn-rang-A {
+    background: #FFF5F5;
+    color: #C53030;
+    border: 2px solid #E53E3E;
+}
+.nightMode .edn-rang-badge.edn-rang-A, .night_mode .edn-rang-badge.edn-rang-A {
+    background: #2D1A1A;
+    color: #FC8181;
+    border-color: #E53E3E;
+}
+.edn-rang-badge.edn-rang-B {
+    background: #EBF8FF;
+    color: #2B6CB0;
+    border: 2px solid #3182CE;
+}
+.nightMode .edn-rang-badge.edn-rang-B, .night_mode .edn-rang-badge.edn-rang-B {
+    background: #1A2634;
+    color: #93C5FD;
+    border-color: #3182CE;
+}
+.edn-rang-badge.edn-rang-C {
+    background: #E6FFFA;
+    color: #234E52;
+    border: 2px solid #319795;
+}
+.nightMode .edn-rang-badge.edn-rang-C, .night_mode .edn-rang-badge.edn-rang-C {
+    background: #1A302F;
+    color: #4FD1C5;
+    border-color: #319795;
+}
+.edn-rang-badge.edn-rang-\? {
+    background: #F7FAFC;
+    color: #4A5568;
+    border: 2px solid #A0AEC0;
+}
+.nightMode .edn-rang-badge.edn-rang-\?, .night_mode .edn-rang-badge.edn-rang-\? {
+    background: #2D3748;
+    color: #E2E8F0;
+    border-color: #4A5568;
+}
+
+/* --- Décalage du contenu recto pour laisser place à la barre --- */
+.section:has(.edn-rang-bar) .items.recto {
+    padding-left: 4px;
+}
+
+/* --- Pictogrammes de matières (intégrés en haut à droite) --- */
+.edn-specialty-icons {
+    position: absolute;
+    top: -12px;
+    right: 12px;
+    background: #f5f6f7;
+    border: 2px solid;
+    border-color: inherit;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 14px;
+    line-height: 1.2;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.nightMode .edn-specialty-icons, .night_mode .edn-specialty-icons {
+    background: #373a41;
+}
+
+/* Sur mobile : icônes légèrement plus petites et calées */
+.mobile .edn-specialty-icons {
+    font-size: 12px;
+    padding: 1px 4px;
+    top: -10px;
+    right: 8px;
+}
+
+
+
+/* Force le texte à occuper l'espace libéré par les badges */
+.section .items {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+}
+
+/* Restreindre la taille des formules MathJax */
+.MathJax, mjx-container {
+    font-size: 100% !important;
+}
 
 ```
