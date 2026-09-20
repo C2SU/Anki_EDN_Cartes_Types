@@ -228,8 +228,9 @@
                     realColor = '#3182CE';
                 }
 
-                // 2. Coloration des cartes notées Again X fois (Drapeau 2 / Orange)
-                if (!realColor && prefs.flagAgainEnabled === true) {
+                // 2. Coloration des cartes notées Again X fois
+                var showAgain = isMobile ? (prefs.flagAgainEnabledMobile === true) : (prefs.flagAgainEnabled === true);
+                if (!realColor && showAgain) {
                     var isDifficult = false;
                     if (typeof window !== 'undefined' && window._ednIsDifficultCard === true) {
                         isDifficult = true;
@@ -242,7 +243,8 @@
                         }
                     }
                     if (isDifficult) {
-                        realColor = '#DD6B20'; // Orange (Drapeau 2)
+                        var leechFlagKey = prefs.virtual_flag_color_leech || 'flag2';
+                        realColor = flagColorMap[leechFlagKey] || '#DD6B20';
                     }
                 }
 
@@ -277,16 +279,16 @@
                 if (dualVirtColor && color) {
                     var dualGradient = "linear-gradient(to right, " + dualVirtColor + " 50%, " + color + " 50%) 1";
                     for (var s of sections) { s.style.borderColor = "transparent"; s.style.borderImage = dualGradient; }
-                    for (var h of hiders) { h.style.borderColor = "transparent"; h.style.borderImage = dualGradient; }
-                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = dualVirtColor; }
+                    for (var h of hiders) { if (!showRank || !h.className.includes("edn-rang-")) { h.style.borderColor = "transparent"; h.style.borderImage = dualGradient; } }
+                    for (var b of bars) { if (!showRank || !b.className.includes("edn-rang-")) { b.style.borderImage = "none"; b.style.borderColor = dualVirtColor; } }
                 } else if (color) {
                     for (var s of sections) { s.style.borderImage = "none"; s.style.borderColor = color; }
-                    for (var h of hiders) { h.style.borderImage = "none"; h.style.borderColor = color; }
-                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = color; }
+                    for (var h of hiders) { if (!showRank || !h.className.includes("edn-rang-")) { h.style.borderImage = "none"; h.style.borderColor = color; } }
+                    for (var b of bars) { if (!showRank || !b.className.includes("edn-rang-")) { b.style.borderImage = "none"; b.style.borderColor = color; } }
                 } else {
                     for (var s of sections) { s.style.borderImage = "none"; s.style.borderColor = ""; }
-                    for (var h of hiders) { h.style.borderImage = "none"; h.style.borderColor = ""; }
-                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = ""; }
+                    for (var h of hiders) { if (!showRank || !h.className.includes("edn-rang-")) { h.style.borderImage = "none"; h.style.borderColor = ""; } }
+                    for (var b of bars) { if (!showRank || !b.className.includes("edn-rang-")) { b.style.borderImage = "none"; b.style.borderColor = ""; } }
                 }
             }
 
@@ -302,11 +304,13 @@
                 try {
                     var ankiApi = AnkiDroidJS.init({ version: "0.0.3", developer: "anki_edn" });
                     if (ankiApi) {
-                        if (!realColor && prefs.flagAgainEnabled === true && typeof ankiApi.ankiGetCardLapses === 'function') {
+                        if (!realColor && prefs.flagAgainEnabledMobile === true && typeof ankiApi.ankiGetCardLapses === 'function') {
                             ankiApi.ankiGetCardLapses().then(function(lapses) {
                                 var thresh = prefs.flagAgainCount || 7;
                                 if (lapses >= thresh) {
-                                    realColor = '#DD6B20';
+                                    var leechFlagKey = prefs.virtual_flag_color_leech || 'flag2';
+                                    var map = { 'flag1': '#E53E3E', 'flag2': '#DD6B20', 'flag3': '#38A169', 'flag4': '#3182CE', 'flag5': '#D53F8C', 'flag6': '#00A3C4', 'flag7': '#805AD5' };
+                                    realColor = map[leechFlagKey] || '#DD6B20';
                                     if (dualFlagsReview && virtualColor && realColor) {
                                         setBorderColors(realColor, virtualColor);
                                     } else {
@@ -1005,8 +1009,9 @@ if (tagsDiv && tagsDiv.innerHTML.includes("Difficile") || flagsDiv && flagsDiv.i
                     realColor = '#3182CE';
                 }
 
-                // 2. Coloration des cartes notées Again X fois (Drapeau 2 / Orange)
-                if (!realColor && prefs.flagAgainEnabled === true) {
+                // 2. Coloration des cartes notées Again X fois
+                var showAgain = isMobile ? (prefs.flagAgainEnabledMobile === true) : (prefs.flagAgainEnabled === true);
+                if (!realColor && showAgain) {
                     var isDifficult = false;
                     if (typeof window !== 'undefined' && window._ednIsDifficultCard === true) {
                         isDifficult = true;
@@ -1019,7 +1024,8 @@ if (tagsDiv && tagsDiv.innerHTML.includes("Difficile") || flagsDiv && flagsDiv.i
                         }
                     }
                     if (isDifficult) {
-                        realColor = '#DD6B20'; // Orange (Drapeau 2)
+                        var leechFlagKey = prefs.virtual_flag_color_leech || 'flag2';
+                        realColor = flagColorMap[leechFlagKey] || '#DD6B20';
                     }
                 }
 
@@ -1054,16 +1060,16 @@ if (tagsDiv && tagsDiv.innerHTML.includes("Difficile") || flagsDiv && flagsDiv.i
                 if (dualVirtColor && color) {
                     var dualGradient = "linear-gradient(to right, " + dualVirtColor + " 50%, " + color + " 50%) 1";
                     for (var s of sections) { s.style.borderColor = "transparent"; s.style.borderImage = dualGradient; }
-                    for (var h of hiders) { h.style.borderColor = "transparent"; h.style.borderImage = dualGradient; }
-                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = dualVirtColor; }
+                    for (var h of hiders) { if (!showRank || !h.className.includes("edn-rang-")) { h.style.borderColor = "transparent"; h.style.borderImage = dualGradient; } }
+                    for (var b of bars) { if (!showRank || !b.className.includes("edn-rang-")) { b.style.borderImage = "none"; b.style.borderColor = dualVirtColor; } }
                 } else if (color) {
                     for (var s of sections) { s.style.borderImage = "none"; s.style.borderColor = color; }
-                    for (var h of hiders) { h.style.borderImage = "none"; h.style.borderColor = color; }
-                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = color; }
+                    for (var h of hiders) { if (!showRank || !h.className.includes("edn-rang-")) { h.style.borderImage = "none"; h.style.borderColor = color; } }
+                    for (var b of bars) { if (!showRank || !b.className.includes("edn-rang-")) { b.style.borderImage = "none"; b.style.borderColor = color; } }
                 } else {
                     for (var s of sections) { s.style.borderImage = "none"; s.style.borderColor = ""; }
-                    for (var h of hiders) { h.style.borderImage = "none"; h.style.borderColor = ""; }
-                    for (var b of bars) { b.style.borderImage = "none"; b.style.borderColor = ""; }
+                    for (var h of hiders) { if (!showRank || !h.className.includes("edn-rang-")) { h.style.borderImage = "none"; h.style.borderColor = ""; } }
+                    for (var b of bars) { if (!showRank || !b.className.includes("edn-rang-")) { b.style.borderImage = "none"; b.style.borderColor = ""; } }
                 }
             }
 
@@ -1079,11 +1085,13 @@ if (tagsDiv && tagsDiv.innerHTML.includes("Difficile") || flagsDiv && flagsDiv.i
                 try {
                     var ankiApi = AnkiDroidJS.init({ version: "0.0.3", developer: "anki_edn" });
                     if (ankiApi) {
-                        if (!realColor && prefs.flagAgainEnabled === true && typeof ankiApi.ankiGetCardLapses === 'function') {
+                        if (!realColor && prefs.flagAgainEnabledMobile === true && typeof ankiApi.ankiGetCardLapses === 'function') {
                             ankiApi.ankiGetCardLapses().then(function(lapses) {
                                 var thresh = prefs.flagAgainCount || 7;
                                 if (lapses >= thresh) {
-                                    realColor = '#DD6B20';
+                                    var leechFlagKey = prefs.virtual_flag_color_leech || 'flag2';
+                                    var map = { 'flag1': '#E53E3E', 'flag2': '#DD6B20', 'flag3': '#38A169', 'flag4': '#3182CE', 'flag5': '#D53F8C', 'flag6': '#00A3C4', 'flag7': '#805AD5' };
+                                    realColor = map[leechFlagKey] || '#DD6B20';
                                     if (dualFlagsReview && virtualColor && realColor) {
                                         setBorderColors(realColor, virtualColor);
                                     } else {
@@ -1974,14 +1982,35 @@ background-size: 25px auto;
     pointer-events: none;
     transition: background-color 0.3s;
 }
-.bar.edn-rang-A, .barHider.edn-rang-A { background-color: #1A1A1A !important; }
-.bar.edn-rang-B, .barHider.edn-rang-B { background-color: #3B82F6 !important; }
-.bar.edn-rang-C, .barHider.edn-rang-C { background-color: #10B981 !important; }
-.bar.edn-rang-\?, .barHider.edn-rang-\? { background-color: #718096 !important; }
+.bar.edn-rang-A, .bar.edn-rang-B, .bar.edn-rang-C,
+.barHider.edn-rang-A, .barHider.edn-rang-B, .barHider.edn-rang-C {
+    transition: none !important;
+}
 
-.edn-specialty-icons.edn-rang-A { border-color: #1A1A1A !important; }
-.edn-specialty-icons.edn-rang-B { border-color: #3B82F6 !important; }
-.edn-specialty-icons.edn-rang-C { border-color: #10B981 !important; }
+.bar.edn-rang-A, .barHider.edn-rang-A, .edn-rang-bar.edn-rang-A {
+    background-color: var(--edn-rang-a, #1A1A1A) !important;
+    border-color: var(--edn-rang-a, #1A1A1A) !important;
+    border-right-color: var(--edn-rang-a, #1A1A1A) !important;
+}
+.bar.edn-rang-B, .barHider.edn-rang-B, .edn-rang-bar.edn-rang-B {
+    background-color: var(--edn-rang-b, #3B82F6) !important;
+    border-color: var(--edn-rang-b, #3B82F6) !important;
+    border-right-color: var(--edn-rang-b, #3B82F6) !important;
+}
+.bar.edn-rang-C, .barHider.edn-rang-C, .edn-rang-bar.edn-rang-C {
+    background-color: var(--edn-rang-c, #10B981) !important;
+    border-color: var(--edn-rang-c, #10B981) !important;
+    border-right-color: var(--edn-rang-c, #10B981) !important;
+}
+.bar.edn-rang-\?, .barHider.edn-rang-\?, .edn-rang-bar.edn-rang-\? {
+    background-color: #718096 !important;
+    border-color: #718096 !important;
+    border-right-color: #718096 !important;
+}
+
+.edn-specialty-icons.edn-rang-A { border-color: var(--edn-rang-a, #1A1A1A) !important; }
+.edn-specialty-icons.edn-rang-B { border-color: var(--edn-rang-b, #3B82F6) !important; }
+.edn-specialty-icons.edn-rang-C { border-color: var(--edn-rang-c, #10B981) !important; }
 .edn-specialty-icons.edn-rang-\? { border-color: #718096 !important; }
 
 /* --- Badge pill rang (encoche en haut à droite) --- */
