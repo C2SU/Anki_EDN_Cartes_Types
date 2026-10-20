@@ -1,6 +1,12 @@
 ## Front Template
 ```html
-<script src="_edn_prefs.js"></script>
+<script>
+if (typeof edn_prefs === "undefined" && typeof window !== "undefined" && !window.edn_prefs) {
+    var _s = document.createElement('script');
+    _s.src = '_edn_prefs.js';
+    document.head.appendChild(_s);
+}
+</script>
 <div id="nomMegaContainer">
     <div class="barHider nomIcon" onclick="toggle('nom')"></div>
     <div class="section">
@@ -50,7 +56,18 @@
         for (var barDiv of allBars) barDiv.style.borderColor = "blue blue blue blue";
     }
 
-        // ===== EDN CARD STYLES: Rang badge + Specialty icons =====
+        function getEdnPrefs() {
+        try {
+            if (typeof window !== 'undefined' && window.edn_card_prefs) return window.edn_card_prefs;
+            if (typeof edn_prefs !== 'undefined') return edn_prefs;
+            if (typeof window !== 'undefined' && window.edn_prefs) return window.edn_prefs;
+            return JSON.parse(localStorage.getItem('edn_card_prefs') || '{}');
+        } catch(e) {
+            return {};
+        }
+    }
+
+    // ===== EDN CARD STYLES: Rang badge + Specialty icons =====
     // Preferences from localStorage("edn_card_prefs")
     (function ednCardStyles() {
         try {
@@ -62,6 +79,7 @@
                     prefs = JSON.parse(localStorage.getItem("edn_card_prefs") || "{}");
                 }
             } catch(e) {}
+            window.edn_card_prefs = prefs;
             var showRank  = prefs.showRankBadge     === true;
             var isMobile = document.documentElement.classList.contains('mobile') || document.body.classList.contains('mobile');
             var showIcons = isMobile ? (prefs.showSpecialtyIconMobile === true) : (prefs.showSpecialtyIcon !== false);
@@ -349,7 +367,8 @@
     // ===== END EDN CARD STYLES =====
     // -- Capitaliser la première lettre de chaque champ et de chaque puce --
     try {
-    var elementsToCapitalize = document.querySelectorAll('.items, .items li');
+    if (getEdnPrefs().autoCapitalizeFields !== false) {
+        var elementsToCapitalize = document.querySelectorAll('.items, .items li');
     elementsToCapitalize.forEach(function (item) {
         var foundLetter = false;
         var afterCloze = false;
@@ -436,6 +455,8 @@
         }
         capitalizeFirstTextNode(item);
     });
+    }
+
     } catch(e) {}
 
 
@@ -674,11 +695,59 @@
     });
     } catch(e) {}
 
+
+    // Nettoyage lors de la copie : ne pas heriter de color ou background
+    if (!window._ednCopyCleanRegistered) {
+        window._ednCopyCleanRegistered = true;
+        document.addEventListener('copy', function(e) {
+            try {
+                if (getEdnPrefs().cleanClipboardFormatting === false) return;
+                var sel = window.getSelection();
+                if (!sel || !sel.rangeCount) return;
+                var container = document.createElement('div');
+                for (var i = 0; i < sel.rangeCount; i++) {
+                    container.appendChild(sel.getRangeAt(i).cloneContents());
+                }
+                function cleanColors(node) {
+                    if (node.nodeType === 1) {
+                        if (node.style) {
+                            node.style.removeProperty('color');
+                            node.style.removeProperty('background');
+                            node.style.removeProperty('background-color');
+                            node.style.removeProperty('background-image');
+                        }
+                        if (node.hasAttribute && node.hasAttribute('style')) {
+                            var s = node.getAttribute('style') || '';
+                            s = s.replace(/(?:^|;)\s*(?:color|background|background-color|background-image)\s*:[^;]+(?=;|$)/gi, '');
+                            s = s.replace(/^;+|;+$/g, '').trim();
+                            if (s) node.setAttribute('style', s);
+                            else node.removeAttribute('style');
+                        }
+                        for (var c = 0; c < node.children.length; c++) {
+                            cleanColors(node.children[c]);
+                        }
+                    }
+                }
+                cleanColors(container);
+                if (e.clipboardData) {
+                    e.clipboardData.setData('text/html', container.innerHTML);
+                    e.clipboardData.setData('text/plain', sel.toString());
+                    e.preventDefault();
+                }
+            } catch(copyErr) {}
+        });
+    }
 </script>
 ```
 ## Back Template
 ```html
-<script src="_edn_prefs.js"></script>
+<script>
+if (typeof edn_prefs === "undefined" && typeof window !== "undefined" && !window.edn_prefs) {
+    var _s = document.createElement('script');
+    _s.src = '_edn_prefs.js';
+    document.head.appendChild(_s);
+}
+</script>
 <div style="display:none;" id="flagsData">{{CardFlag}}</div>
 <div style="display:none;" id="tagsData">{{Tags}}</div>
 <div style="display:none;" id="errorsData">{{Erreurs faites}}</div>
@@ -841,6 +910,17 @@
         }
     }
 
+    function getEdnPrefs() {
+        try {
+            if (typeof window !== 'undefined' && window.edn_card_prefs) return window.edn_card_prefs;
+            if (typeof edn_prefs !== 'undefined') return edn_prefs;
+            if (typeof window !== 'undefined' && window.edn_prefs) return window.edn_prefs;
+            return JSON.parse(localStorage.getItem('edn_card_prefs') || '{}');
+        } catch(e) {
+            return {};
+        }
+    }
+
     // ===== EDN CARD STYLES: Rang badge + Specialty icons =====
     // Preferences from localStorage("edn_card_prefs")
     (function ednCardStyles() {
@@ -853,6 +933,7 @@
                     prefs = JSON.parse(localStorage.getItem("edn_card_prefs") || "{}");
                 }
             } catch(e) {}
+            window.edn_card_prefs = prefs;
             var showRank  = prefs.showRankBadge     === true;
             var isMobile = document.documentElement.classList.contains('mobile') || document.body.classList.contains('mobile');
             var showIcons = isMobile ? (prefs.showSpecialtyIconMobile === true) : (prefs.showSpecialtyIcon !== false);
@@ -1142,7 +1223,8 @@
 
     // -- Capitaliser la première lettre de chaque champ et de chaque puce --
     try {
-    var elementsToCapitalize = document.querySelectorAll('.items, .items li');
+    if (getEdnPrefs().autoCapitalizeFields !== false) {
+        var elementsToCapitalize = document.querySelectorAll('.items, .items li');
     elementsToCapitalize.forEach(function (item) {
         var foundLetter = false;
         var afterCloze = false;
@@ -1229,11 +1311,14 @@
         }
         capitalizeFirstTextNode(item);
     });
+    }
+
     } catch(e) {}
 
     // -- Capitaliser la première lettre de chaque ENTRÉE dans les cartes liées --
     try {
-    var clItems = document.querySelectorAll('.cartesLiees');
+    if (getEdnPrefs().autoCapitalizeLinkedCards !== false) {
+        var clItems = document.querySelectorAll('.cartesLiees');
     clItems.forEach(function(container) {
         // Fonction récursive pour capitaliser le premier texte d'un segment
         function capitalizeFirstInNode(node) {
@@ -1277,19 +1362,36 @@
             }
         }
     });
+    }
+
     } catch(e) {}
 
     // -- Ajout de saut de ligne après les cartes liées --
     try {
-    var clContainers = document.querySelectorAll('.cartesLiees');
+    if (getEdnPrefs().autoLineBreakLinkedCards !== false) {
+        var clContainers = document.querySelectorAll('.cartesLiees');
     clContainers.forEach(function (container) {
+        function isEmptyInlineNode(node) {
+            if (!node) return false;
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent.replace(/\u00A0/g, ' ').trim() === "";
+            }
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.nodeName === 'BR' || node.nodeName === 'DIV' || node.nodeName === 'P' || node.nodeName === 'KBD' || node.nodeName === 'IMG' || node.nodeName === 'HR') {
+                    return false;
+                }
+                if (node.querySelector && node.querySelector('kbd, img, br, div, p')) {
+                    return false;
+                }
+                return (node.textContent || "").replace(/\u00A0/g, ' ').trim() === "";
+            }
+            return false;
+        }
+
         // Supprimer les <br> en tout début de conteneur s'il n'y a pas de texte significatif avant
         var child = container.firstChild;
         while (child) {
-            if (child.nodeType === Node.TEXT_NODE) {
-                if (child.textContent.replace(/\u00A0/g, ' ').trim() !== "") {
-                    break;
-                }
+            if (isEmptyInlineNode(child)) {
                 child = child.nextSibling;
             } else if (child.nodeName === 'BR') {
                 var next = child.nextSibling;
@@ -1300,37 +1402,39 @@
             }
         }
 
-        // Supprimer les <br> en toute fin de conteneur s'il n'y a pas de texte significatif après
-        var lastChild = container.lastChild;
-        while (lastChild) {
-            if (lastChild.nodeType === Node.TEXT_NODE) {
-                if (lastChild.textContent.replace(/\u00A0/g, ' ').trim() !== "") {
+        // Supprimer les <br> en toute fin de conteneur (et sous-blocs div) s'il n'y a pas de texte significatif après
+        var blocks = [container].concat(Array.from(container.querySelectorAll('div')));
+        blocks.forEach(function(block) {
+            var lastChild = block.lastChild;
+            while (lastChild) {
+                if (isEmptyInlineNode(lastChild)) {
+                    lastChild = lastChild.previousSibling;
+                } else if (lastChild.nodeName === 'BR') {
+                    var prev = lastChild.previousSibling;
+                    lastChild.parentNode.removeChild(lastChild);
+                    lastChild = prev;
+                } else {
                     break;
                 }
-                lastChild = lastChild.previousSibling;
-            } else if (lastChild.nodeName === 'BR') {
-                var prev = lastChild.previousSibling;
-                lastChild.parentNode.removeChild(lastChild);
-                lastChild = prev;
-            } else {
-                break;
             }
-        }
+        });
 
         var kbds = container.querySelectorAll('kbd.clickable_cards');
         kbds.forEach(function(kbd) {
             var next = kbd.nextSibling;
             var insertBeforeNode = next;
-            while (next && next.nodeType === Node.TEXT_NODE && next.textContent.replace(/\u00A0/g, ' ').trim() === "") {
+            while (next && isEmptyInlineNode(next)) {
                 next = next.nextSibling;
                 insertBeforeNode = next;
             }
-            if (next && next.nodeName !== "BR" && next.nodeName !== "DIV" && next.nodeName !== "KBD") {
+            if (next && next.nodeName !== "BR" && next.nodeName !== "DIV" && next.nodeName !== "P" && next.nodeName !== "KBD") {
                 var br = document.createElement('br');
                 kbd.parentNode.insertBefore(br, insertBeforeNode);
             }
         });
     });
+    }
+
     } catch(e) {}
 
     // -- Images : zoom au clic, lien au double-clic --
@@ -1650,23 +1754,72 @@ background-color: #2f2f31;
 mjx-container, mjx-container *, .MathJax, .MathJax * { color: inherit !important; font-weight: inherit !important; text-decoration: inherit !important; }
 anki-mathjax, anki-mathjax * { color: inherit !important; font-weight: inherit !important; text-decoration: inherit !important; font-style: inherit !important; }
 
-/* for space between embedded lists*/
-ul > li:last-child {
-padding-bottom: 5px;
+/* Harmonisation des listes et espacements */
+.items ul, .items ol {
+  margin-top: 4px;
+  margin-bottom: 4px;
+  padding-left: 28px;
 }
 
-ul > li {
-padding-top: 0px;
-padding-bottom: 4px;
+.items > ul:first-child,
+.items > ol:first-child,
+.items > span > ul:first-child,
+.items > span > ol:first-child,
+.items > div > ul:first-child,
+.items > div > ol:first-child {
+  margin-top: 0;
 }
 
-ol > li:last-child {
-padding-bottom: 5px;
+.items > ul:last-child,
+.items > ol:last-child,
+.items > span > ul:last-child,
+.items > span > ol:last-child,
+.items > div > ul:last-child,
+.items > div > ol:last-child {
+  margin-bottom: 0;
 }
 
-ol > li {
-padding-top: 0px;
-padding-bottom: 4px;
+/* Puces principales : aérées et équilibrées dans le cadre */
+.items > ul > li, .items > ol > li,
+.items > span > ul > li, .items > span > ol > li,
+.items > div > ul > li, .items > div > ol > li {
+  padding-top: 3px;
+  padding-bottom: 5px;
+}
+
+/* Rapprochement naturel de l'en-tête et de sa sous-liste */
+ul > li:has(+ ul), ol > li:has(+ ol),
+ul > li:has(+ ol), ol > li:has(+ ul),
+ul > li:has(> ul), ol > li:has(> ol),
+li:has(+ ul), li:has(+ ol) {
+  padding-bottom: 1px !important;
+  margin-bottom: 0px !important;
+}
+
+/* Rapprochement doux sous le titre parent avec légère aération */
+.items ul ul, .items ol ol, .items ul ol, .items ol ul,
+ul > li > ul, ol > li > ol, ul > li > ol, ol > li > ul,
+li + ul, li + ol {
+  margin-top: 2px !important;
+}
+
+/* Léger padding supérieur pour que la première puce respire */
+ul > li > ul > li:first-child, ol > li > ol > li:first-child,
+ul > li > ol > li:first-child, ol > li > ul > li:first-child,
+li + ul > li:first-child, li + ol > li:first-child,
+ul ul > li:first-child, ol ol > li:first-child {
+  padding-top: 1px !important;
+  margin-top: 0px !important;
+}
+
+/* Sous-listes de niveau 2 : aérées */
+ul ul > li, ol ol > li, ul ol > li, ol ul > li {
+  padding-top: 1px;
+  padding-bottom: 5px;
+}
+
+ul > li:last-child, ol > li:last-child {
+  padding-bottom: 0px;
 }
 
 /*Start of style added by resize image add-on. Don't edit directly or the edition will be lost. Edit via the add-on
@@ -1682,10 +1835,11 @@ border-radius: 5px;
 position: relative;
 background-color: #f5f6f7;
 color: #1d2129;
-margin : 16px 0 8px 0;
+margin : 10px 0 10px 0;
 margin-left: 5%;
 margin-right: 5%;
 display: flex;
+align-items: center;
 }
 
 .nightMode .section, .night_mode .section, .mobile .night_mode .section {
@@ -1711,7 +1865,9 @@ background-size: 25px auto;
 background-size: 25px auto;
 writing-mode: vertical-lr;
 text-orientation: upright;
+
 min-height: 35px;
+align-self: stretch;
 cursor: pointer;
 transition: background-color 1.5s;
 }
@@ -1744,7 +1900,7 @@ background-size: 25px auto;
 writing-mode: vertical-lr;
 text-orientation: upright;
 min-height: 35px;
-margin : 16px 0 8px 0;
+margin : 10px 0 10px 0;
 margin-left: 5%;
 margin-right: 5%;
 display: none;
@@ -1756,7 +1912,14 @@ transition: background-color 1.5s, transform 2s 0.25s;
 margin: 0 6px;
 padding: 8px 0;
 flex-grow: 1;
+line-height: 1.4;
 }
+
+/* Préserver l'alignement et espacement naturel des puces */
+.items ul, .items ol {
+  line-height: normal;
+}
+
 
 .mobile .items {
   overflow-x: auto;
@@ -1769,6 +1932,9 @@ flex-grow: 1;
 .mobile .section {
   max-width: 90%;
   overflow: visible;
+  margin: 6px 0 6px 0 !important;
+  margin-left: 5% !important;
+  margin-right: 5% !important;
 }
 
 .mobile .bar {
@@ -1791,6 +1957,9 @@ flex-grow: 1;
   padding-left: 0;
   background-size: 25px auto;
   overflow: hidden;
+  margin: 6px 0 6px 0 !important;
+  margin-left: 5% !important;
+  margin-right: 5% !important;
 }
 
 .mobile .items table {
@@ -1892,7 +2061,10 @@ text-align: left;
   max-height: 400px !important;
   object-fit: contain;
   display: block;
-  margin: 0 auto 5px auto;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 0;
+  margin-bottom: 5px;
   border-radius: 8px;
   cursor: zoom-in;
 }
@@ -1919,6 +2091,34 @@ text-align: left;
 .nightMode.card img.fullscreen-img, .night_mode.card img.fullscreen-img {
   box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.92) !important;
   background-color: rgba(0, 0, 0, 0.92) !important;
+}
+/* Images côte à côte, centrées */
+
+.items h3 {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 4px 8px 4px;
+}
+
+.items h3 a > div,
+.items h3 > div {
+  display: inline-block;
+}
+
+hr {
+  margin: 0 !important;
+  border: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  visibility: hidden !important;
+}
+
+.items > span:has(> h3),
+.items > div:has(> h3),
+.items div:has(> h3),
+.items span:has(> h3) {
+  display: block;
+  text-align: center;
 }
 .img-legend {
   font-size: 50%;
