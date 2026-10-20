@@ -1809,79 +1809,22 @@ background-color: #2f2f31;
 mjx-container, mjx-container *, .MathJax, .MathJax * { color: inherit !important; font-weight: inherit !important; text-decoration: inherit !important; }
 anki-mathjax, anki-mathjax * { color: inherit !important; font-weight: inherit !important; text-decoration: inherit !important; font-style: inherit !important; }
 
-/* Harmonisation des listes et espacements */
-.items ul, .items ol {
-  margin-top: 4px;
-  margin-bottom: 4px;
-  padding-left: 28px;
+/* for space between embedded lists*/
+ul > li:last-child {
+padding-bottom: 5px;
+}
+ul > li {
+padding-top: 0px;
+padding-bottom: 4px;
 }
 
-.items > ul:first-child,
-.items > ol:first-child,
-.items > span:first-child > ul:first-child,
-.items > span:first-child > ol:first-child,
-.items > span > ul:first-child,
-.items > span > ol:first-child,
-.items > div:first-child > ul:first-child,
-.items > div:first-child > ol:first-child,
-.items > div > ul:first-child,
-.items > div > ol:first-child,
-.items ul:first-child,
-.items ol:first-child {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+ol > li:last-child {
+padding-bottom: 5px;
 }
 
-.items > ul:last-child,
-.items > ol:last-child,
-.items > span > ul:last-child,
-.items > span > ol:last-child,
-.items > div > ul:last-child,
-.items > div > ol:last-child {
-  margin-bottom: 0;
-}
-
-/* Puces principales : aérées et équilibrées dans le cadre */
-.items > ul > li, .items > ol > li,
-.items > span > ul > li, .items > span > ol > li,
-.items > div > ul > li, .items > div > ol > li {
-  padding-top: 3px;
-  padding-bottom: 5px;
-}
-
-/* Rapprochement naturel de l'en-tête et de sa sous-liste */
-ul > li:has(+ ul), ol > li:has(+ ol),
-ul > li:has(+ ol), ol > li:has(+ ul),
-ul > li:has(> ul), ol > li:has(> ol),
-li:has(+ ul), li:has(+ ol) {
-  padding-bottom: 1px !important;
-  margin-bottom: 0px !important;
-}
-
-/* Rapprochement doux sous le titre parent avec légère aération */
-.items ul ul, .items ol ol, .items ul ol, .items ol ul,
-ul > li > ul, ol > li > ol, ul > li > ol, ol > li > ul,
-li + ul, li + ol {
-  margin-top: 2px !important;
-}
-
-/* Léger padding supérieur pour que la première puce respire */
-ul > li > ul > li:first-child, ol > li > ol > li:first-child,
-ul > li > ol > li:first-child, ol > li > ul > li:first-child,
-li + ul > li:first-child, li + ol > li:first-child,
-ul ul > li:first-child, ol ol > li:first-child {
-  padding-top: 1px !important;
-  margin-top: 0px !important;
-}
-
-/* Sous-listes de niveau 2 : aérées */
-ul ul > li, ol ol > li, ul ol > li, ol ul > li {
-  padding-top: 1px;
-  padding-bottom: 5px;
-}
-
-ul > li:last-child, ol > li:last-child {
-  padding-bottom: 0px;
+ol > li {
+padding-top: 0px;
+padding-bottom: 4px;
 }
 
 /*Start of style added by resize image add-on. Don't edit directly or the edition will be lost. Edit via the add-on
@@ -1897,11 +1840,10 @@ border-radius : 5px;
 position : relative;
 background-color: #f5f6f7;
 color: #1d2129;
-margin : 10px 0 10px 0;
+margin : 16px 0 8px 0;
 margin-left: 5%;
 margin-right: 5%;
 display:flex;
-align-items: center;
 }
 
 .nightMode .section, .night_mode .section, .mobile .night_mode .section {
@@ -1927,9 +1869,7 @@ background-size: 25px auto;
 background-size: 25px auto;
 writing-mode: vertical-lr;
 text-orientation: upright;
-
 min-height: 35px;
-align-self: stretch;
 cursor: pointer;
 transition: background-color 1.5s
 }
@@ -1962,7 +1902,7 @@ background-size: 25px auto;
 writing-mode: vertical-lr;
 text-orientation: upright;
 min-height: 35px;
-margin : 10px 0 10px 0;
+margin : 16px 0 8px 0;
 margin-left: 5%;
 margin-right: 5%;
 display: none;
@@ -1974,12 +1914,6 @@ transition: background-color 1.5s, transform 2s 0.25s
 margin : 0 6px;
 padding : 8px 0;
 flex-grow: 1;
-line-height: 1.4;
-}
-
-/* Préserver l'espacement et l'alignement naturel des puces */
-.items ul, .items ol {
-  line-height: normal;
 }
 
 .mobile .items {
@@ -1993,9 +1927,6 @@ line-height: 1.4;
 .mobile .section {
   max-width: 90%;
   overflow: visible;
-  margin: 6px 0 6px 0 !important;
-  margin-left: 5% !important;
-  margin-right: 5% !important;
 }
 
 .mobile .bar {
@@ -2018,9 +1949,6 @@ line-height: 1.4;
   padding-left: 0;
   background-size: 25px auto;
   overflow: hidden;
-  margin: 6px 0 6px 0 !important;
-  margin-left: 5% !important;
-  margin-right: 5% !important;
 }
 
 .mobile .items table {
@@ -2111,10 +2039,7 @@ text-align: left;
   max-height: 400px !important;
   object-fit: contain;
   display: block;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  margin-top: 0;
-  margin-bottom: 5px;
+  margin: 0 auto 5px auto;
   border-radius: 8px;
   cursor: zoom-in;
 }
@@ -2141,34 +2066,6 @@ text-align: left;
 .nightMode.card img.fullscreen-img, .night_mode.card img.fullscreen-img {
   box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.92) !important;
   background-color: rgba(0, 0, 0, 0.92) !important;
-}
-/* Images côte à côte, centrées */
-
-.items h3 {
-  display: inline-block;
-  vertical-align: top;
-  margin: 0 4px 8px 4px;
-}
-
-.items h3 a > div,
-.items h3 > div {
-  display: inline-block;
-}
-
-hr {
-  margin: 0 !important;
-  border: 0 !important;
-  height: 0 !important;
-  padding: 0 !important;
-  visibility: hidden !important;
-}
-
-.items > span:has(> h3),
-.items > div:has(> h3),
-.items div:has(> h3),
-.items span:has(> h3) {
-  display: block;
-  text-align: center;
 }
 .img-legend {
   font-size: 50%;
