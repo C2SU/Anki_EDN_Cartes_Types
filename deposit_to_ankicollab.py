@@ -13,6 +13,19 @@ import shutil
 import lz4.block
 import requests
 from bs4 import BeautifulSoup
+from urllib3.util import connection
+
+# Contournement du blocage DNS / FAI francais (RST injectes sur 188.114.96.x/188.114.97.x)
+# Routage direct vers les adresses Anycast Cloudflare propres
+_orig_create_connection = connection.create_connection
+
+def _patched_create_connection(address, *args, **kwargs):
+    host, port = address
+    if host == "ankicollab.com":
+        host = "104.21.32.1"
+    return _orig_create_connection((host, port), *args, **kwargs)
+
+connection.create_connection = _patched_create_connection
 
 DROPBOX_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -66,19 +79,9 @@ def find_firefox_profile():
 
 def get_firefox_session():
     profile_dir = find_firefox_profile()
-    
-    # 1. Recuperation des cookies de session depuis recovery.jsonlz4
-    recovery_path = os.path.join(profile_dir, "sessionstore-backups", "recovery.jsonlz4")
     session_cookies = {}
-    if os.path.exists(recovery_path):
-        with open(recovery_path, "rb") as f:
-            data = lz4.block.decompress(f.read()[8:])
-            session_data = json.loads(data)
-            for c in session_data.get("cookies", []):
-                if "ankicollab" in c.get("host", ""):
-                    session_cookies[c["name"]] = c["value"]
-
-    # 2. Recuperation des cookies persistants (cf_clearance) depuis cookies.sqlite
+    
+    # 1. Recuperation des cookies depuis cookies.sqlite (base persistante de Firefox)
     temp_dir = tempfile.mkdtemp()
     try:
         for f in ["cookies.sqlite", "cookies.sqlite-wal", "cookies.sqlite-shm"]:
@@ -92,11 +95,36 @@ def get_firefox_session():
             cur = conn.cursor()
             cur.execute("SELECT name, value FROM moz_cookies WHERE host LIKE ?", ("%ankicollab%",))
             for name, val in cur.fetchall():
-                if name not in session_cookies:
-                    session_cookies[name] = val
+                session_cookies[name] = val
             conn.close()
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
+
+    # 2. Recuperation eventuelle depuis recovery.jsonlz4 (session volatile si plus recente)
+    recovery_path = os.path.join(profile_dir, "sessionstore-backups", "recovery.jsonlz4")
+    if os.path.exists(recovery_path):
+        try:
+            with open(recovery_path, "rb") as f:
+                data = lz4.block.decompress(f.read()[8:])
+                session_data = json.loads(data)
+                for c in session_data.get("cookies", []):
+                    if "ankicollab" in c.get("host", ""):
+                        name = c["name"]
+                        val = c["value"]
+                        if name not in session_cookies:
+                            session_cookies[name] = val
+                        elif name == "__Host-ankicollabsession":
+                            try:
+                                import base64
+                                def get_jwt_exp(tok):
+                                    p = tok.split(".")[1] + "=" * (-len(tok.split(".")[1]) % 4)
+                                    return json.loads(base64.b64decode(p)).get("exp", 0)
+                                if get_jwt_exp(val) > get_jwt_exp(session_cookies[name]):
+                                    session_cookies[name] = val
+                            except Exception:
+                                pass
+        except Exception:
+            pass
 
     if "__Host-ankicollabsession" not in session_cookies:
         raise PermissionError("Cookie __Host-ankicollabsession introuvable dans Firefox. Connectez-vous sur ankicollab.com dans Firefox.")
