@@ -6,6 +6,7 @@ Ce dossier contient les definitions sources (HTML/CSS) des types de cartes du de
 > **ATTENTION - CONDITION STRICTE** :
 > Ne JAMAIS lancer le script de mise à jour ni pusher sur Git de manière automatique ou implicite.
 > Toute actualisation sur AnkiCollab ou GitHub requiert impérativement une **demande expresse** de l'utilisateur.
+> L'invocation de la commande `/ankicollab-notetypes` vaut ordre formel de déploiement vers AnkiCollab.
 
 Lorsqu'une demande expresse de l'utilisateur requiert de mettre a jour ("deposer" / "update") les styles de cartes sur AnkiCollab (via `https://ankicollab.com/ManageDecks`), la mise a jour doit obligatoirement utiliser la session authentifiee du navigateur Firefox.
 
