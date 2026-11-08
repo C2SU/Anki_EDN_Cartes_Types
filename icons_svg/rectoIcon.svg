@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path d="M 12.0 22.8 L 5.7 16.6 A 9.0 9.0 0 1 1 18.3 16.6 Z" fill="#ef4444" stroke="#b91c1c" stroke-width="1.1" stroke-linejoin="round"/>
+  <!-- Chunky Bold Question Mark -->
+  <path d="M 8.2 7.6 C 8.2 4.9 9.9 3.4 12.0 3.4 C 14.1 3.4 15.7 4.9 15.7 7.2 C 15.7 8.7 14.8 9.8 13.8 10.6 C 13.0 11.2 12.7 11.8 12.7 12.8 L 10.7 12.8 C 10.7 11.1 11.5 10.2 12.3 9.5 C 13.0 8.8 13.4 8.2 13.4 7.2 C 13.4 6.2 12.8 5.4 12.0 5.4 C 11.0 5.4 10.5 6.2 10.5 7.6 Z" fill="#ffffff" stroke="#7f1d1d" stroke-width="0.95" stroke-linejoin="round"/>
+  <circle cx="11.75" cy="15.8" r="1.55" fill="#ffffff" stroke="#7f1d1d" stroke-width="0.95"/>
+</svg>
